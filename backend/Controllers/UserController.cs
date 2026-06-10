@@ -28,13 +28,15 @@ namespace backend.Controllers
         {
             var query = _context.Users
                 .Include(x => x.Role)
+                .Where(x => x.Role.RoleName == "Customer")
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(x =>
                     x.FullName.Contains(keyword) ||
-                    x.Username.Contains(keyword));
+                    x.Username.Contains(keyword)
+                );
             }
 
             var totalItems = await query.CountAsync();
@@ -52,6 +54,7 @@ namespace backend.Controllers
                     x.Phone,
                     x.Address,
                     x.IsActive,
+                    x.CreatedAt,
                     Role = x.Role.RoleName
                 })
                 .ToListAsync();
@@ -64,7 +67,6 @@ namespace backend.Controllers
                 data = users
             });
         }
-
         // USER PROFILE
         [Authorize]
         [HttpGet("profile/{id}")]
