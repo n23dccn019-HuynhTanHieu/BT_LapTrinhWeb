@@ -1,61 +1,154 @@
-import React from 'react';
+import React from "react";
+
+const statusText = {
+  0: "Huỷ",
+  1: "Chờ xử lý",
+  2: "Đang chuẩn bị",
+  3: "Đang giao",
+  4: "Đã giao",
+  5: "Hoàn thành",
+};
 
 const OrderDetail = ({ order, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl p-6 w-full max-w-2xl shadow-xl flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-xl p-6 w-full max-w-3xl shadow-xl flex flex-col max-h-[90vh]">
+
         <div className="flex justify-between items-center border-b pb-3 mb-4">
-          <h3 className="text-lg font-bold text-gray-900">Chi Tiết Đơn Hàng: <span className="text-indigo-600">{order.id}</span></h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+          <h3 className="text-lg font-bold">
+            Chi Tiết Đơn Hàng #
+            <span className="text-indigo-600">
+              {order.orderID}
+            </span>
+          </h3>
+
+          <button
+            onClick={onClose}
+            className="text-xl"
+          >
+            ×
+          </button>
         </div>
 
-        <div className="overflow-y-auto space-y-4 flex-1 pr-1">
-          {/* Thông tin người nhận */}
-          <div className="bg-gray-50 p-4 rounded-lg border text-sm space-y-1">
-            <h4 className="font-bold text-gray-700 mb-1">📋 THÔNG TIN GIAO HÀNG</h4>
-            <p><span className="text-gray-500">Người nhận:</span> <span className="font-medium text-gray-800">{order.customerName}</span></p>
-            <p><span className="text-gray-500">Số điện thoại:</span> {order.phone}</p>
-            <p><span className="text-gray-500">Địa chỉ nhận hàng:</span> {order.address}</p>
-            <p><span className="text-gray-500">Loại đơn hàng:</span> {order.isMember ? 'Tài khoản Thành viên đăng nhập' : 'Khách vãng lai đặt nhanh'}</p>
+        <div className="overflow-y-auto flex-1 space-y-4">
+
+          <div className="bg-gray-50 p-4 rounded border">
+            <h4 className="font-bold mb-2">
+              📋 THÔNG TIN GIAO HÀNG
+            </h4>
+
+            <p>
+              <strong>Người nhận:</strong>{" "}
+              {order.receiverName}
+            </p>
+
+            <p>
+              <strong>SĐT:</strong>{" "}
+              {order.receiverPhone}
+            </p>
+
+            <p>
+              <strong>Địa chỉ:</strong>{" "}
+              {order.receiverAddress}
+            </p>
+
+            <p>
+              <strong>Ghi chú:</strong>{" "}
+              {order.note || "Không có"}
+            </p>
           </div>
 
-          {/* Danh sách sản phẩm mua */}
           <div>
-            <h4 className="font-bold text-gray-700 text-sm mb-2">📦 DANH SÁCH SẢN PHẨM</h4>
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-100 border-b">
-                  <tr>
-                    <th className="p-3 font-medium text-gray-600">Sản phẩm</th>
-                    <th className="p-3 font-medium text-gray-600 text-center">Số lượng</th>
-                    <th className="p-3 font-medium text-gray-600 text-right">Đơn giá</th>
-                    <th className="p-3 font-medium text-gray-600 text-right">Thành tiền</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {order.items.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="p-3 font-medium text-gray-800">{item.name}</td>
-                      <td className="p-3 text-center text-gray-700">{item.qty}</td>
-                      <td className="p-3 text-right text-gray-600">{item.price.toLocaleString('vi-VN')}đ</td>
-                      <td className="p-3 text-right font-medium text-gray-800">{(item.qty * item.price).toLocaleString('vi-VN')}đ</td>
+            <h4 className="font-bold mb-2">
+              📦 DANH SÁCH SẢN PHẨM
+            </h4>
+
+            <table className="w-full border">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="p-2 text-left">
+                    Sản phẩm
+                  </th>
+                  <th className="p-2 text-center">
+                    SL
+                  </th>
+                  <th className="p-2 text-right">
+                    Đơn giá
+                  </th>
+                  <th className="p-2 text-right">
+                    Thành tiền
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {order.orderDetails?.map(
+                  (item) => (
+                    <tr
+                      key={item.orderDetailID}
+                      className="border-t"
+                    >
+                      <td className="p-2">
+                        {
+                          item.product
+                            ?.productName
+                        }
+                      </td>
+
+                      <td className="p-2 text-center">
+                        {item.quantity}
+                      </td>
+
+                      <td className="p-2 text-right">
+                        {item.price.toLocaleString(
+                          "vi-VN"
+                        )}
+                        đ
+                      </td>
+
+                      <td className="p-2 text-right">
+                        {(
+                          item.quantity *
+                          item.price
+                        ).toLocaleString(
+                          "vi-VN"
+                        )}
+                        đ
+                      </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  )
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/* Tổng tiền chân trang */}
-        <div className="border-t pt-4 mt-4 flex justify-between items-center">
+        <div className="border-t pt-4 mt-4 flex justify-between">
           <div>
-            <span className="text-sm text-gray-500">Trạng thái hiện tại:</span>
-            <span className="ml-2 font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-xs border border-amber-200">{order.status}</span>
+            <span>
+              Trạng thái:
+            </span>
+
+            <span className="ml-2 font-bold text-indigo-600">
+              {
+                statusText[
+                  order.orderStatus
+                ]
+              }
+            </span>
           </div>
-          <div className="text-right">
-            <span className="text-sm text-gray-500 mr-2">Tổng giá trị:</span>
-            <span className="text-xl font-bold text-red-600">{order.total.toLocaleString('vi-VN')}đ</span>
+
+          <div>
+            <span className="mr-2">
+              Tổng tiền:
+            </span>
+
+            <span className="font-bold text-red-600 text-xl">
+              {order.totalAmount?.toLocaleString(
+                "vi-VN"
+              )}
+              đ
+            </span>
           </div>
         </div>
       </div>

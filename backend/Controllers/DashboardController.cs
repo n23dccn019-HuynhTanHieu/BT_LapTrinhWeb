@@ -24,8 +24,9 @@ namespace backend.Controllers
             var totalProducts =
                 await _context.Products.CountAsync();
 
-            var totalUsers =
-                await _context.Users.CountAsync();
+            var totalUsers = await _context.Users
+                .Include(x => x.Role)
+                .CountAsync(x => x.Role.RoleName == "Customer");
 
             var totalOrders =
                 await _context.Orders.CountAsync();

@@ -20,7 +20,7 @@ import Cart from './pages/customer/Cart';
 import Checkout from './pages/customer/Checkout';
 
 // Admin
-import Dashboard from './pages/admin/Dashboard';
+import Dashboard from './pages/admin/dashboard/Dashboard';
 import CategoryList from './pages/admin/categories/CategoryList';
 import ProductListAdmin from './pages/admin/products/ProductList';
 import ProductForm from './pages/admin/products/ProductForm';

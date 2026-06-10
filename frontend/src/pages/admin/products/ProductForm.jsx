@@ -1,126 +1,257 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import productService from "../../../services/productService";
 
 const ProductForm = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // Nếu có id trên URL => Trang Sửa, ngược lại => Trang Thêm
+  const { id } = useParams();
+
   const isEditMode = !!id;
 
+  const [categories, setCategories] = useState([]);
+
   const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    price: '',
-    promoPrice: '',
-    description: '',
-    image: null
+    productName: "",
+    categoryID: "",
+    price: "",
+    promoPrice: "",
+    thumbnail: "",
+    description: "",
+    stockQuantity: 0,
+    isActive: true,
   });
 
   useEffect(() => {
-    if (isEditMode) {
-      // Giả lập lấy thông tin sản phẩm cũ từ hệ thống đổ vào Form khi bấm Sửa
-      setFormData({
-        name: 'iPhone 15 Pro Max 256GB',
-        category: 'Điện thoại',
-        price: '34990000',
-        promoPrice: '31990000',
-        description: 'Mô tả cấu hình chi tiết của iPhone 15 Pro Max...',
-        image: null
-      });
-    }
-  }, [id, isEditMode]);
+    loadCategories();
 
-  const handleSubmit = (e) => {
+    if (isEditMode) {
+      loadProduct();
+    }
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5016/api/categories"
+      );
+
+      const data = await res.json();
+
+      setCategories(data.data || data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const loadProduct = async () => {
+    try {
+      const res = await productService.getById(id);
+
+      const product = res.data;
+
+      setFormData({
+        productName: product.productName,
+        categoryID: product.categoryID,
+        price: product.price,
+        promoPrice: product.promoPrice || "",
+        thumbnail: product.thumbnail || "",
+        description: product.description || "",
+        stockQuantity: product.stockQuantity,
+        isActive: product.isActive,
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(isEditMode ? 'Cập nhật sản phẩm thành công!' : 'Thêm sản phẩm mới thành công!');
-    navigate('/admin/products');
+
+    const token = localStorage.getItem("token");
+
+    try {
+      if (isEditMode) {
+        await productService.update(
+          id,
+          {
+            ProductName: formData.productName,
+            CategoryID: Number(formData.categoryID),
+            Price: Number(formData.price),
+            PromoPrice: formData.promoPrice
+              ? Number(formData.promoPrice)
+              : null,
+            Thumbnail: formData.thumbnail,
+            Description: formData.description,
+            StockQuantity: Number(formData.stockQuantity),
+            IsActive: formData.isActive,
+          },
+          token
+        );
+
+        alert("Cập nhật thành công");
+      } else {
+        await productService.create(
+          {
+            ProductName: formData.productName,
+            CategoryID: Number(formData.categoryID),
+            Price: Number(formData.price),
+            PromoPrice: formData.promoPrice
+              ? Number(formData.promoPrice)
+              : null,
+            Thumbnail: formData.thumbnail,
+            Description: formData.description,
+            StockQuantity: Number(formData.stockQuantity),
+            IsActive: true,
+          },
+          token
+        );
+
+        alert("Thêm sản phẩm thành công");
+      }
+
+      navigate("/admin/products");
+    } catch (err) {
+      console.log(err);
+
+      alert("Có lỗi xảy ra");
+    }
   };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border p-6 max-w-2xl mx-auto">
-      <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-3">
-        {isEditMode ? '📝 Cập Nhật Thông Tin Sản Phẩm' : '🚀 Thêm Sản Phẩm Mới'}
+      <h2 className="text-xl font-bold mb-6">
+        {isEditMode
+          ? "Cập Nhật Sản Phẩm"
+          : "Thêm Sản Phẩm"}
       </h2>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Tên sản phẩm *</label>
-          <input
-            type="text"
-            required
-            className="w-full border p-2.5 rounded-lg focus:outline-indigo-500"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          />
-        </div>
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4"
+      >
+        <input
+          type="text"
+          placeholder="Tên sản phẩm"
+          className="w-full border p-3 rounded"
+          value={formData.productName}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              productName: e.target.value,
+            })
+          }
+          required
+        />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục *</label>
-            <select
-              required
-              className="w-full border p-2.5 rounded-lg focus:outline-indigo-500"
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+        <select
+          className="w-full border p-3 rounded"
+          value={formData.categoryID}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              categoryID: e.target.value,
+            })
+          }
+          required
+        >
+          <option value="">
+            Chọn danh mục
+          </option>
+
+          {categories.map((c) => (
+            <option
+              key={c.categoryID}
+              value={c.categoryID}
             >
-              <option value="">Chọn danh mục</option>
-              <option value="Điện thoại">Điện thoại</option>
-              <option value="Laptop">Laptop</option>
-              <option value="Phụ kiện">Phụ kiện</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Giá bán gốc (đ) *</label>
-            <input
-              type="number"
-              required
-              className="w-full border p-2.5 rounded-lg focus:outline-indigo-500"
-              value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Giá khuyến mãi (đ)</label>
-            <input
-              type="number"
-              className="w-full border p-2.5 rounded-lg focus:outline-indigo-500"
-              value={formData.promoPrice}
-              onChange={(e) => setFormData({ ...formData, promoPrice: e.target.value })}
-            />
-          </div>
-        </div>
+              {c.categoryName}
+            </option>
+          ))}
+        </select>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Hình ảnh sản phẩm</label>
-          <input
-            type="file"
-            accept="image/*"
-            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-          />
-        </div>
+        <input
+          type="number"
+          placeholder="Giá"
+          className="w-full border p-3 rounded"
+          value={formData.price}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              price: e.target.value,
+            })
+          }
+          required
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả chi tiết</label>
-          <textarea
-            rows="4"
-            className="w-full border p-2.5 rounded-lg focus:outline-indigo-500"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          ></textarea>
-        </div>
+        <input
+          type="number"
+          placeholder="Giá khuyến mãi"
+          className="w-full border p-3 rounded"
+          value={formData.promoPrice}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              promoPrice: e.target.value,
+            })
+          }
+        />
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <input
+          type="text"
+          placeholder="Thumbnail URL"
+          className="w-full border p-3 rounded"
+          value={formData.thumbnail}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              thumbnail: e.target.value,
+            })
+          }
+        />
+
+        <input
+          type="number"
+          placeholder="Số lượng tồn kho"
+          className="w-full border p-3 rounded"
+          value={formData.stockQuantity}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              stockQuantity: e.target.value,
+            })
+          }
+        />
+
+        <textarea
+          rows="4"
+          placeholder="Mô tả"
+          className="w-full border p-3 rounded"
+          value={formData.description}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              description: e.target.value,
+            })
+          }
+        />
+
+        <div className="flex gap-3">
           <button
             type="button"
-            onClick={() => navigate('/admin/products')}
-            className="px-5 py-2 border rounded-lg text-gray-600 hover:bg-gray-50 font-medium text-sm"
+            onClick={() =>
+              navigate("/admin/products")
+            }
+            className="px-4 py-2 border rounded"
           >
             Quay lại
           </button>
+
           <button
             type="submit"
-            className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm shadow-sm"
+            className="px-4 py-2 bg-indigo-600 text-white rounded"
           >
-            {isEditMode ? 'Lưu cập nhật' : 'Đăng sản phẩm'}
+            {isEditMode
+              ? "Cập nhật"
+              : "Thêm sản phẩm"}
           </button>
         </div>
       </form>
