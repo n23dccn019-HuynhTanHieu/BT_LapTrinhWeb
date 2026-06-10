@@ -208,6 +208,26 @@ export default function ProductList({ searchTerm, selectedCategory }) {
 
   return (
     <div>
+      <div
+        style={{
+          maxWidth: "1200px",
+          margin: "20px auto",
+          borderRadius: "16px",
+          overflow: "hidden",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+        }}
+      >
+        <img
+          src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1200"
+          alt="TechShop Banner"
+          style={{
+            width: "100%",
+            height: "320px",
+            objectFit: "cover",
+            display: "block",
+          }}
+        />
+      </div>
       {/* KHỐI CHỌN MỨC GIÁ BẰNG BUTTONS */}
       <div className="price-filter-container">
         <span>
@@ -287,8 +307,34 @@ export default function ProductList({ searchTerm, selectedCategory }) {
                       overflow: "hidden",
                       backgroundColor: "#f7fafc",
                       borderRadius: "8px 8px 0 0",
+                      position: "relative",
                     }}
                   >
+                    {product.salePrice && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "10px",
+                          left: "10px",
+                          backgroundColor: "#ef4444",
+                          color: "#fff",
+                          padding: "5px 10px",
+                          borderRadius: "6px",
+                          fontSize: "12px",
+                          fontWeight: "700",
+                          zIndex: 10,
+                        }}
+                      >
+                        -
+                        {Math.round(
+                          ((product.price - product.salePrice) /
+                            product.price) *
+                            100
+                        )}
+                        %
+                      </div>
+                    )}
+
                     <img
                       src={product.image}
                       alt={product.name}

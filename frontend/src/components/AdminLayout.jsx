@@ -13,7 +13,6 @@ import {
   FiBox,
   FiShoppingCart,
   FiUsers,
-  FiKey,
   FiHome,
 } from 'react-icons/fi';
 
@@ -23,7 +22,6 @@ const adminMenuItems = [
   { label: 'Quản lý sản phẩm', icon: <FiBox />, path: '/admin/products' },
   { label: 'Quản lý đơn hàng', icon: <FiShoppingCart />, path: '/admin/orders' },
   { label: 'Danh sách khách hàng', icon: <FiUsers />, path: '/admin/customers' },
-  { label: 'Tài khoản quản trị', icon: <FiKey />, path: '/admin/accounts' },
 ];
 
 export const AdminLayout = ({ children }) => {

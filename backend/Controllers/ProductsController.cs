@@ -62,13 +62,13 @@ namespace backend.Controllers
 
             // Sorting
             query = sortBy switch
-            {
-                "price_asc" => query.OrderBy(x => x.Price),
-                "price_desc" => query.OrderByDescending(x => x.Price),
-                "name_asc" => query.OrderBy(x => x.ProductName),
-                "name_desc" => query.OrderByDescending(x => x.ProductName),
-                _ => query.OrderByDescending(x => x.ProductID)
-            };
+                {
+                    "price_asc" => query.OrderBy(x => x.Price),
+                    "price_desc" => query.OrderByDescending(x => x.Price),
+                    "name_asc" => query.OrderBy(x => x.ProductName),
+                    "name_desc" => query.OrderByDescending(x => x.ProductName),
+                    _ => query.OrderBy(x => x.ProductID)
+                };
 
             var totalItems = await query.CountAsync();
 

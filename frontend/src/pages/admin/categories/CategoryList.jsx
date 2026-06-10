@@ -178,11 +178,27 @@ const CategoryList = () => {
               </div>
               <div className="form-group">
                 <label style={{ fontWeight: '800', color: '#000000', fontSize: '14px' }}>Mô tả</label>
-                <textarea
+               <textarea
                   rows="3"
-                  style={{ border: '2px solid #000000', fontWeight: '700', color: '#000000', fontSize: '15px', padding: '12px', borderRadius: '12px', outline: 'none' }}
+                  style={{
+                    backgroundColor: '#ffffff',
+                    border: '2px solid #000000',
+                    color: '#000000',
+                    fontWeight: '700',
+                    fontSize: '15px',
+                    padding: '12px',
+                    borderRadius: '12px',
+                    outline: 'none',
+                    width: '100%',
+                    resize: 'vertical'
+                  }}
                   value={currentCategory.description}
-                  onChange={(e) => setCurrentCategory({...currentCategory, description: e.target.value})}
+                  onChange={(e) =>
+                    setCurrentCategory({
+                      ...currentCategory,
+                      description: e.target.value
+                    })
+                  }
                 />
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }}>
