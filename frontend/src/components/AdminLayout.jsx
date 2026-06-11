@@ -18,6 +18,7 @@ import {
 } from "react-icons/fi";
 
 const adminMenuItems = [
+ HEAD
   { label: "Thống kê doanh thu", icon: <FiPieChart />, path: "/admin" },
   { label: "Quản lý danh mục", icon: <FiFolder />, path: "/admin/categories" },
   { label: "Quản lý sản phẩm", icon: <FiBox />, path: "/admin/products" },
@@ -32,6 +33,13 @@ const adminMenuItems = [
     path: "/admin/customers",
   },
   { label: "Tài khoản quản trị", icon: <FiShield />, path: "/admin/accounts" },
+=======
+  { label: 'Thống kê doanh thu', icon: <FiPieChart />, path: '/admin' },
+  { label: 'Quản lý danh mục', icon: <FiFolder />, path: '/admin/categories' },
+  { label: 'Quản lý sản phẩm', icon: <FiBox />, path: '/admin/products' },
+  { label: 'Quản lý đơn hàng', icon: <FiShoppingCart />, path: '/admin/orders' },
+  { label: 'Danh sách khách hàng', icon: <FiUsers />, path: '/admin/customers' },
+>>>>>>> cf16d3122133f6c533a67ad5f6227b73a98c03b4
 ];
 
 export const AdminLayout = ({ children }) => {
@@ -64,7 +72,7 @@ export const AdminLayout = ({ children }) => {
     return fullName.slice(0, 2).toUpperCase();
   };
 
-  useEffect(() => {
+  useEffect((<<<<<<<) => {
     const handleClickOutside = (event) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setIsUserMenuOpen(false);

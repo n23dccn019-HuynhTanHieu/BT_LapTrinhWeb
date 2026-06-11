@@ -20,9 +20,7 @@ namespace backend.Controllers
 
         // CUSTOMER CREATE ORDER
         [HttpPost]
-        public async Task<IActionResult> Create(
-            CreateOrderDTO dto
-        )
+        public async Task<IActionResult> Create(CreateOrderDTO dto)
         {
             decimal totalAmount = 0;
 
@@ -38,13 +36,11 @@ namespace backend.Controllers
             };
 
             _context.Orders.Add(order);
-
             await _context.SaveChangesAsync();
 
             foreach (var item in dto.Items)
             {
-                var product = await _context.Products
-                    .FindAsync(item.ProductID);
+                var product = await _context.Products.FindAsync(item.ProductID);
 
                 if (product == null)
                 {
@@ -53,13 +49,10 @@ namespace backend.Controllers
 
                 if (product.StockQuantity < item.Quantity)
                 {
-                    return BadRequest(
-                        $"{product.ProductName} out of stock"
-                    );
+                    return BadRequest($"{product.ProductName} out of stock");
                 }
 
                 decimal price = product.PromoPrice ?? product.Price;
-
                 totalAmount += price * item.Quantity;
 
                 var orderDetail = new OrderDetail
@@ -77,7 +70,6 @@ namespace backend.Controllers
             }
 
             order.TotalAmount = totalAmount;
-
             await _context.SaveChangesAsync();
 
             return Ok(new
@@ -91,25 +83,36 @@ namespace backend.Controllers
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> GetAll(
-            int? status,
-            int page = 1,
-            int pageSize = 10
+            [FromQuery] int? status,
+            [FromQuery] string? keyword = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 50
         )
         {
             var query = _context.Orders
                 .Include(x => x.User)
                 .AsQueryable();
 
+            // Lọc theo trạng thái
             if (status.HasValue)
             {
-                query = query.Where(x =>
-                    x.OrderStatus == status);
+                query = query.Where(x => x.OrderStatus == status.Value);
+            }
+
+            // Lọc theo từ khóa (ID hoặc tên)
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(x => 
+                    x.OrderID.ToString().Contains(keyword) || 
+                    x.ReceiverName.Contains(keyword)
+                );
             }
 
             var totalItems = await query.CountAsync();
 
+            // SỬA TẠI ĐÂY: Sử dụng OrderBy để sắp xếp TĂNG DẦN theo ID
             var orders = await query
-                .OrderByDescending(x => x.OrderID)
+                .OrderBy(x => x.OrderID) 
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -122,7 +125,6 @@ namespace backend.Controllers
                 data = orders
             });
         }
-
         // ORDER DETAIL
         [Authorize]
         [HttpGet("{id}")]
@@ -132,8 +134,7 @@ namespace backend.Controllers
                 .Include(x => x.User)
                 .Include(x => x.OrderDetails)
                 .ThenInclude(x => x.Product)
-                .FirstOrDefaultAsync(x =>
-                    x.OrderID == id);
+                .FirstOrDefaultAsync(x => x.OrderID == id);
 
             if (order == null)
             {
@@ -146,13 +147,9 @@ namespace backend.Controllers
         // UPDATE STATUS
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}/status")]
-        public async Task<IActionResult> UpdateStatus(
-            int id,
-            int status
-        )
+        public async Task<IActionResult> UpdateStatus(int id, [FromQuery] int status)
         {
-            var order = await _context.Orders
-                .FindAsync(id);
+            var order = await _context.Orders.FindAsync(id);
 
             if (order == null)
             {
@@ -172,8 +169,7 @@ namespace backend.Controllers
         [HttpPut("{id}/cancel")]
         public async Task<IActionResult> CancelOrder(int id)
         {
-            var order = await _context.Orders
-                .FindAsync(id);
+            var order = await _context.Orders.FindAsync(id);
 
             if (order == null)
             {
@@ -183,19 +179,13 @@ namespace backend.Controllers
             // only pending
             if (order.OrderStatus != 1)
             {
-                return BadRequest(
-                    "Cannot cancel this order"
-                );
+                return BadRequest("Cannot cancel this order");
             }
 
             order.OrderStatus = 0;
-
             await _context.SaveChangesAsync();
 
-            return Ok(new
-            {
-                message = "Order canceled"
-            });
+            return Ok(new { message = "Order canceled" });
         }
     }
 }

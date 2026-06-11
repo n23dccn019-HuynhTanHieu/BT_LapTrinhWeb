@@ -17,53 +17,71 @@ namespace backend.Controllers
             _context = context;
         }
 
-        // ADMIN GET USERS
-        [Authorize(Roles = "Admin")]
-        [HttpGet]
-        public async Task<IActionResult> GetAll(
-            string? keyword,
-            int page = 1,
-            int pageSize = 10
-        )
+    // ADMIN GET USERS
+    [Authorize(Roles = "Admin")]
+    [HttpGet]
+    public async Task<IActionResult> GetAll(
+        [FromQuery] string? keyword,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 100
+    )
+    {
+        // 1. Tạo câu lệnh base và lọc cứng Role Name từ đầu
+        var query = _context.Users
+            .Include(x => x.Role)
+            .Where(x => x.Role.RoleName == "Customer");
+
+        // 2. Xử lý bộ lọc tìm kiếm
+        if (!string.IsNullOrEmpty(keyword))
         {
-            var query = _context.Users
-                .Include(x => x.Role)
-                .AsQueryable();
+            string cleanKeyword = keyword.Trim();
 
-            if (!string.IsNullOrEmpty(keyword))
+            if (int.TryParse(cleanKeyword, out int searchId))
             {
-                query = query.Where(x =>
-                    x.FullName.Contains(keyword) ||
-                    x.Username.Contains(keyword));
+                // Lọc tuyệt đối theo ID tài khoản
+                query = query.Where(x => x.UserID == searchId);
             }
-
-            var totalItems = await query.CountAsync();
-
-            var users = await query
-                .OrderByDescending(x => x.UserID)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(x => new
-                {
-                    x.UserID,
-                    x.Username,
-                    x.FullName,
-                    x.Email,
-                    x.Phone,
-                    x.Address,
-                    x.IsActive,
-                    Role = x.Role.RoleName
-                })
-                .ToListAsync();
-
-            return Ok(new
+            else
             {
-                totalItems,
-                page,
-                pageSize,
-                data = users
-            });
+                // Lọc tương đối theo thông tin chuỗi
+                query = query.Where(x =>
+                    x.FullName.Contains(cleanKeyword) ||
+                    x.Username.Contains(cleanKeyword) ||
+                    (x.Phone != null && x.Phone.Contains(cleanKeyword))
+                );
+            }
         }
+
+        // 3. Đếm tổng số lượng dòng thỏa mãn điều kiện lọc
+        var totalItems = await query.CountAsync();
+
+        // 4. THỰC THI SẮP XẾP VÀ PHÂN TRANG (Đảm bảo OrderBy chạy trực tiếp trên SQL server)
+        var users = await query
+            .OrderBy(x => x.UserID) // Ép SQL Server quét chỉ mục (Index) tăng dần
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new
+            {
+                x.UserID,
+                x.Username,
+                x.FullName,
+                x.Email,
+                x.Phone,
+                x.Address,
+                x.IsActive,
+                x.CreatedAt,
+                Role = x.Role.RoleName
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            totalItems,
+            page,
+            pageSize,
+            data = users
+        });
+    }
 
         // USER PROFILE
         [Authorize]
@@ -96,13 +114,9 @@ namespace backend.Controllers
         // UPDATE PROFILE
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(
-            int id,
-            Models.User model
-        )
+        public async Task<IActionResult> Update(int id, Models.User model)
         {
-            var user = await _context.Users
-                .FindAsync(id);
+            var user = await _context.Users.FindAsync(id);
 
             if (user == null)
             {
@@ -123,44 +137,27 @@ namespace backend.Controllers
         // CHANGE PASSWORD
         [Authorize]
         [HttpPut("{id}/change-password")]
-        public async Task<IActionResult> ChangePassword(
-            int id,
-            string oldPassword,
-            string newPassword
-        )
+        public async Task<IActionResult> ChangePassword(int id, string oldPassword, string newPassword)
         {
-            var user = await _context.Users
-                .FindAsync(id);
+            var user = await _context.Users.FindAsync(id);
 
             if (user == null)
             {
                 return NotFound();
             }
 
-            bool checkOldPassword =
-                BCrypt.Net.BCrypt.Verify(
-                    oldPassword,
-                    user.PasswordHash
-                );
+            bool checkOldPassword = BCrypt.Net.BCrypt.Verify(oldPassword, user.PasswordHash);
 
             if (!checkOldPassword)
             {
-                return BadRequest(
-                    "Old password incorrect"
-                );
+                return BadRequest("Old password incorrect");
             }
 
-            user.PasswordHash =
-                BCrypt.Net.BCrypt.HashPassword(
-                    newPassword
-                );
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
 
             await _context.SaveChangesAsync();
 
-            return Ok(new
-            {
-                message = "Password changed"
-            });
+            return Ok(new { message = "Password changed" });
         }
     }
 }
