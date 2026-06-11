@@ -1,129 +1,241 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import productService from "../../../services/productService";
+import { ArrowLeft, Save, ShoppingBag } from "lucide-react";
 
 const ProductForm = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // Nếu có id trên URL => Trang Sửa, ngược lại => Trang Thêm
+  const { id } = useParams();
   const isEditMode = !!id;
 
+  const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    price: '',
-    promoPrice: '',
-    description: '',
-    image: null
+    productName: "",
+    categoryID: "",
+    price: "",
+    promoPrice: "",
+    thumbnail: "",
+    description: "",
+    stockQuantity: 0,
+    isActive: true,
   });
 
   useEffect(() => {
+    loadCategories();
     if (isEditMode) {
-      // Giả lập lấy thông tin sản phẩm cũ từ hệ thống đổ vào Form khi bấm Sửa
-      setFormData({
-        name: 'iPhone 15 Pro Max 256GB',
-        category: 'Điện thoại',
-        price: '34990000',
-        promoPrice: '31990000',
-        description: 'Mô tả cấu hình chi tiết của iPhone 15 Pro Max...',
-        image: null
-      });
+      loadProduct();
     }
-  }, [id, isEditMode]);
+  }, []);
 
-  const handleSubmit = (e) => {
+  const loadCategories = async () => {
+    try {
+      const res = await fetch("http://localhost:5016/api/categories");
+      const data = await res.json();
+      setCategories(data.data || data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const loadProduct = async () => {
+    try {
+      const res = await productService.getById(id);
+      const product = res.data;
+      setFormData({
+        productName: product.productName,
+        categoryID: product.categoryID,
+        price: product.price,
+        promoPrice: product.promoPrice || "",
+        thumbnail: product.thumbnail || "",
+        description: product.description || "",
+        stockQuantity: product.stockQuantity,
+        isActive: product.isActive,
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(isEditMode ? 'Cập nhật sản phẩm thành công!' : 'Thêm sản phẩm mới thành công!');
-    navigate('/admin/products');
+    const token = localStorage.getItem("token");
+
+    try {
+      const payload = {
+        ProductName: formData.productName,
+        CategoryID: Number(formData.categoryID),
+        Price: Number(formData.price),
+        PromoPrice: formData.promoPrice ? Number(formData.promoPrice) : null,
+        Thumbnail: formData.thumbnail,
+        Description: formData.description,
+        StockQuantity: Number(formData.stockQuantity),
+        IsActive: formData.isActive,
+      };
+
+      if (isEditMode) {
+        await productService.update(id, payload, token);
+        alert("Cập nhật thành công");
+      } else {
+        await productService.create({ ...payload, IsActive: true }, token);
+        alert("Thêm sản phẩm thành công");
+      }
+      navigate("/admin/products");
+    } catch (err) {
+      console.log(err);
+      alert("Có lỗi xảy ra");
+    }
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border p-6 max-w-2xl mx-auto">
-      <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-3">
-        {isEditMode ? '📝 Cập Nhật Thông Tin Sản Phẩm' : '🚀 Thêm Sản Phẩm Mới'}
-      </h2>
-
-      <form onSubmit={handleSubmit} className="space-y-5">
+    <div style={{ maxWidth: '680px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px', WebkitFontSmoothing: 'subpixel-antialiased', MozOsxFontSmoothing: 'auto' }}>
+      
+      {/* Header Panel */}
+      <div style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: '2px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Tên sản phẩm *</label>
-          <input
-            type="text"
-            required
-            className="w-full border p-2.5 rounded-lg focus:outline-indigo-500"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          />
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '22px', fontWeight: '900', margin: 0, color: '#000000' }}>
+            <ShoppingBag style={{ color: '#2563eb' }} size={24} strokeWidth={3} />
+            {isEditMode ? "Cập Nhật Sản Phẩm" : "Thêm Sản Phẩm Mới"}
+          </h2>
+          <p style={{ fontSize: '14px', color: '#0f172a', fontWeight: '700', marginTop: '6px' }}>
+            Điền đầy đủ thông tin để lưu trữ vào cơ sở dữ liệu hệ thống.
+          </p>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục *</label>
-            <select
+      {/* Form Body Container */}
+      <div style={{ background: '#ffffff', padding: '32px', borderRadius: '16px', border: '2px solid #cbd5e1', boxShadow: 'var(--shadow)' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          {/* Tên sản phẩm */}
+          <div className="form-group" style={{ margin: 0 }}>
+            <label style={{ display: 'block', fontWeight: '800', color: '#000000', marginBottom: '8px', fontSize: '14px' }}>Tên sản phẩm *</label>
+            <input
+              type="text"
+              placeholder="Nhập tên sản phẩm..."
+              style={{ width: '100%', boxSizing: 'border-box', border: '2px solid #cbd5e1', padding: '12px 16px', borderRadius: '12px', fontWeight: '700', color: '#000000', fontSize: '15px', outline: 'none', background: '#ffffff' }}
+              value={formData.productName}
+              onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
               required
-              className="w-full border p-2.5 rounded-lg focus:outline-indigo-500"
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            />
+          </div>
+
+          {/* Danh mục sản phẩm */}
+          <div className="form-group" style={{ margin: 0 }}>
+            <label style={{ display: 'block', fontWeight: '800', color: '#000000', marginBottom: '8px', fontSize: '14px' }}>Danh mục sản phẩm *</label>
+            <select
+              style={{ width: '100%', boxSizing: 'border-box', border: '2px solid #cbd5e1', padding: '12px 16px', borderRadius: '12px', fontWeight: '700', color: '#000000', fontSize: '15px', background: '#ffffff', outline: 'none' }}
+              value={formData.categoryID}
+              onChange={(e) => setFormData({ ...formData, categoryID: e.target.value })}
+              required
             >
-              <option value="">Chọn danh mục</option>
-              <option value="Điện thoại">Điện thoại</option>
-              <option value="Laptop">Laptop</option>
-              <option value="Phụ kiện">Phụ kiện</option>
+              <option value="" style={{ background: '#ffffff' }}>-- Chọn danh mục liên kết --</option>
+              {categories.map((c) => (
+                <option key={c.categoryID} value={c.categoryID} style={{ background: '#ffffff' }}>
+                  {c.categoryName}
+                </option>
+              ))}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Giá bán gốc (đ) *</label>
-            <input
-              type="number"
-              required
-              className="w-full border p-2.5 rounded-lg focus:outline-indigo-500"
-              value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+
+          {/* Hàng chứa Giá và Giá KM */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label style={{ display: 'block', fontWeight: '800', color: '#000000', marginBottom: '8px', fontSize: '14px' }}>Giá gốc (đ) *</label>
+              <input
+                type="number"
+                placeholder="Ví dụ: 150000"
+                style={{ width: '100%', boxSizing: 'border-box', border: '2px solid #cbd5e1', padding: '12px 16px', borderRadius: '12px', fontWeight: '700', color: '#000000', fontSize: '15px', outline: 'none', background: '#ffffff' }}
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="form-group" style={{ margin: 0 }}>
+              <label style={{ display: 'block', fontWeight: '800', color: '#000000', marginBottom: '8px', fontSize: '14px' }}>Giá khuyến mãi (đ)</label>
+              <input
+                type="number"
+                placeholder="Để trống nếu không có"
+                style={{ width: '100%', boxSizing: 'border-box', border: '2px solid #cbd5e1', padding: '12px 16px', borderRadius: '12px', fontWeight: '700', color: '#000000', fontSize: '15px', outline: 'none', background: '#ffffff' }}
+                value={formData.promoPrice}
+                onChange={(e) => setFormData({ ...formData, promoPrice: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Hàng chứa Số lượng và Thumbnail */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label style={{ display: 'block', fontWeight: '800', color: '#000000', marginBottom: '8px', fontSize: '14px' }}>Số lượng tồn kho *</label>
+              <input
+                type="number"
+                placeholder="0"
+                style={{ width: '100%', boxSizing: 'border-box', border: '2px solid #cbd5e1', padding: '12px 16px', borderRadius: '12px', fontWeight: '700', color: '#000000', fontSize: '15px', outline: 'none', background: '#ffffff' }}
+                value={formData.stockQuantity}
+                onChange={(e) => setFormData({ ...formData, stockQuantity: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="form-group" style={{ margin: 0 }}>
+              <label style={{ display: 'block', fontWeight: '800', color: '#000000', marginBottom: '8px', fontSize: '14px' }}>Đường dẫn Thumbnail URL</label>
+              <input
+                type="text"
+                placeholder="https://example.com/image.jpg"
+                style={{ width: '100%', boxSizing: 'border-box', border: '2px solid #cbd5e1', padding: '12px 16px', borderRadius: '12px', fontWeight: '700', color: '#000000', fontSize: '15px', outline: 'none', background: '#ffffff' }}
+                value={formData.thumbnail}
+                onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Mô tả chi tiết */}
+          <div className="form-group" style={{ margin: 0 }}>
+            <label style={{ display: 'block', fontWeight: '800', color: '#000000', marginBottom: '8px', fontSize: '14px' }}>Mô tả chi tiết sản phẩm</label>
+            <textarea
+              rows="4"
+              placeholder="Nhập thông số, đặc điểm nổi bật..."
+              style={{ width: '100%', boxSizing: 'border-box', border: '2px solid #cbd5e1', padding: '14px 16px', borderRadius: '12px', fontWeight: '700', color: '#000000', fontSize: '15px', outline: 'none', resize: 'vertical', background: '#ffffff' }}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Giá khuyến mãi (đ)</label>
-            <input
-              type="number"
-              className="w-full border p-2.5 rounded-lg focus:outline-indigo-500"
-              value={formData.promoPrice}
-              onChange={(e) => setFormData({ ...formData, promoPrice: e.target.value })}
-            />
+
+          {isEditMode && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 0' }}>
+              <input
+                type="checkbox"
+                id="isActive"
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                checked={formData.isActive}
+                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+              />
+              <label htmlFor="isActive" style={{ fontWeight: '800', color: '#000000', fontSize: '15px', cursor: 'pointer' }}>
+                Kích hoạt hiển thị trên sàn kinh doanh
+              </label>
+            </div>
+          )}
+
+          {/* Thanh tác vụ chân Form */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '14px', marginTop: '16px', borderTop: '2px solid #cbd5e1', paddingTop: '20px' }}>
+            <button
+              type="button"
+              onClick={() => navigate("/admin/products")}
+              style={{ background: '#e2e8f0', border: '2px solid #cbd5e1', padding: '12px 24px', borderRadius: '12px', fontWeight: '900', color: '#000000', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}
+            >
+              <ArrowLeft size={16} strokeWidth={2.5} /> Quay lại
+            </button>
+            <button
+              type="submit"
+              className="btn-auth-submit"
+              style={{ width: 'auto', margin: 0, padding: '12px 28px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}
+            >
+              <Save size={16} strokeWidth={2.5} /> {isEditMode ? "Cập nhật dữ liệu" : "Lưu sản phẩm"}
+            </button>
           </div>
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Hình ảnh sản phẩm</label>
-          <input
-            type="file"
-            accept="image/*"
-            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả chi tiết</label>
-          <textarea
-            rows="4"
-            className="w-full border p-2.5 rounded-lg focus:outline-indigo-500"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          ></textarea>
-        </div>
-
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <button
-            type="button"
-            onClick={() => navigate('/admin/products')}
-            className="px-5 py-2 border rounded-lg text-gray-600 hover:bg-gray-50 font-medium text-sm"
-          >
-            Quay lại
-          </button>
-          <button
-            type="submit"
-            className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm shadow-sm"
-          >
-            {isEditMode ? 'Lưu cập nhật' : 'Đăng sản phẩm'}
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

@@ -1,44 +1,81 @@
-import React from 'react';
+import React from "react";
+import { X, User, Phone, MapPin, FileText, ShoppingBag } from "lucide-react";
+
+const statusText = {
+  0: { label: "Hủy bỏ đơn", color: "#dc2626" },
+  1: { label: "Chờ xử lý hệ thống", color: "#d97706" },
+  2: { label: "Đang đóng gói chuẩn bị", color: "#16a34a" },
+  3: { label: "Đang giao dịch vận chuyển", color: "#2563eb" },
+  4: { label: "Đã giao hàng thành công", color: "#7c3aed" },
+  5: { label: "Đơn hàng hoàn thành", color: "#db2777" },
+};
 
 const OrderDetail = ({ order, onClose }) => {
+  const currentStatus = statusText[order.orderStatus] || { label: "Không rõ", color: "#000" };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl p-6 w-full max-w-2xl shadow-xl flex flex-col max-h-[90vh]">
-        <div className="flex justify-between items-center border-b pb-3 mb-4">
-          <h3 className="text-lg font-bold text-gray-900">Chi Tiết Đơn Hàng: <span className="text-indigo-600">{order.id}</span></h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0, 0, 0, 0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", zIndex: 1000, WebkitFontSmoothing: "subpixel-antialiased" }}>
+      <div style={{ background: "#ffffff", borderRadius: "16px", width: "100%", maxWidth: "760px", border: "3px solid #000000", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.3)", display: "flex", flexDirection: "column", maxHeight: "90vh" }}>
+        
+        {/* Header Modal */}
+        <div style={{ padding: "20px 24px", borderBottom: "2px solid #cbd5e1", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" }}>
+          <h3 style={{ fontSize: "18px", fontWeight: "900", margin: 0, color: "#000000" }}>
+            Chi Tiết Đơn Hàng <span style={{ color: "#2563eb" }}>#{order.orderID}</span>
+          </h3>
+          <button
+            onClick={onClose}
+            style={{ background: "none", border: "none", color: "#000000", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}
+          >
+            <X size={24} strokeWidth={3} />
+          </button>
         </div>
 
-        <div className="overflow-y-auto space-y-4 flex-1 pr-1">
-          {/* Thông tin người nhận */}
-          <div className="bg-gray-50 p-4 rounded-lg border text-sm space-y-1">
-            <h4 className="font-bold text-gray-700 mb-1">📋 THÔNG TIN GIAO HÀNG</h4>
-            <p><span className="text-gray-500">Người nhận:</span> <span className="font-medium text-gray-800">{order.customerName}</span></p>
-            <p><span className="text-gray-500">Số điện thoại:</span> {order.phone}</p>
-            <p><span className="text-gray-500">Địa chỉ nhận hàng:</span> {order.address}</p>
-            <p><span className="text-gray-500">Loại đơn hàng:</span> {order.isMember ? 'Tài khoản Thành viên đăng nhập' : 'Khách vãng lai đặt nhanh'}</p>
+        {/* Nội dung hóa đơn cuộn dọc */}
+        <div style={{ overflowY: "auto", padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
+          
+          {/* Khối thông tin giao nhận hàng */}
+          <div style={{ background: "#f1f5f9", padding: "18px", borderRadius: "12px", border: "2px solid #cbd5e1" }}>
+            <h4 style={{ margin: "0 0 12px 0", fontSize: "14px", fontWeight: "900", color: "#0f172a", display: "flex", alignItems: "center", gap: "6px" }}>
+              📋 THÔNG TIN ĐỊA CHỈ NHẬN HÀNG
+            </h4>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", color: "#000000", fontWeight: "700" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><User size={15} /> Người nhận: <span style={{ fontWeight: "800" }}>{order.receiverName}</span></div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><Phone size={15} /> Số điện thoại: <span style={{ fontWeight: "800" }}>{order.receiverPhone}</span></div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><MapPin size={15} /> Địa chỉ nơi giao: <span style={{ fontWeight: "800" }}>{order.receiverAddress}</span></div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><FileText size={15} /> Nội dung ghi chú: <span style={{ fontWeight: "800", color: "#475569" }}>{order.note || "Không ghi chú"}</span></div>
+            </div>
           </div>
 
-          {/* Danh sách sản phẩm mua */}
+          {/* Bảng danh sách giỏ hàng */}
           <div>
-            <h4 className="font-bold text-gray-700 text-sm mb-2">📦 DANH SÁCH SẢN PHẨM</h4>
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-100 border-b">
-                  <tr>
-                    <th className="p-3 font-medium text-gray-600">Sản phẩm</th>
-                    <th className="p-3 font-medium text-gray-600 text-center">Số lượng</th>
-                    <th className="p-3 font-medium text-gray-600 text-right">Đơn giá</th>
-                    <th className="p-3 font-medium text-gray-600 text-right">Thành tiền</th>
+            <h4 style={{ margin: "0 0 10px 0", fontSize: "14px", fontWeight: "900", color: "#0f172a", display: "flex", alignItems: "center", gap: "6px" }}>
+              <ShoppingBag size={16} /> DANH SÁCH MẶT HÀNG ĐÃ ĐẶT
+            </h4>
+            <div style={{ border: "2px solid #cbd5e1", borderRadius: "12px", overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+                <thead>
+                  <tr style={{ background: "#e2e8f0", color: "#000000", borderBottom: "2px solid #cbd5e1" }}>
+                    <th style={{ padding: "10px 12px", fontWeight: "900", textAlign: "left" }}>Tên sản phẩm</th>
+                    <th style={{ padding: "10px 12px", fontWeight: "900", textAlign: "center", width: "60px" }}>SL</th>
+                    <th style={{ padding: "10px 12px", fontWeight: "900", textAlign: "right", width: "120px" }}>Đơn giá</th>
+                    <th style={{ padding: "10px 12px", fontWeight: "900", textAlign: "right", width: "130px" }}>Thành tiền</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
-                  {order.items.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="p-3 font-medium text-gray-800">{item.name}</td>
-                      <td className="p-3 text-center text-gray-700">{item.qty}</td>
-                      <td className="p-3 text-right text-gray-600">{item.price.toLocaleString('vi-VN')}đ</td>
-                      <td className="p-3 text-right font-medium text-gray-800">{(item.qty * item.price).toLocaleString('vi-VN')}đ</td>
+                <tbody>
+                  {order.orderDetails?.map((item) => (
+                    <tr key={item.orderDetailID} style={{ borderBottom: "1px solid #cbd5e1", background: "#ffffff" }}>
+                      <td style={{ padding: "12px", fontWeight: "800", color: "#000000" }}>
+                        {item.product?.productName || "Sản phẩm đã xóa"}
+                      </td>
+                      <td style={{ padding: "12px", textAlign: "center", fontWeight: "900" }}>
+                        {item.quantity}
+                      </td>
+                      <td style={{ padding: "12px", textAlign: "right", fontWeight: "700" }}>
+                        {Number(item.price).toLocaleString("vi-VN")}đ
+                      </td>
+                      <td style={{ padding: "12px", textAlign: "right", fontWeight: "900", color: "#000000" }}>
+                        {(item.quantity * item.price).toLocaleString("vi-VN")}đ
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -47,17 +84,22 @@ const OrderDetail = ({ order, onClose }) => {
           </div>
         </div>
 
-        {/* Tổng tiền chân trang */}
-        <div className="border-t pt-4 mt-4 flex justify-between items-center">
+        {/* Chân Modal chứa thông tin tổng kết thanh toán */}
+        <div style={{ padding: "20px 24px", borderTop: "2px solid #cbd5e1", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center", borderRadius: "0 0 16px 16px" }}>
           <div>
-            <span className="text-sm text-gray-500">Trạng thái hiện tại:</span>
-            <span className="ml-2 font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-xs border border-amber-200">{order.status}</span>
+            <span style={{ fontSize: "14px", fontWeight: "800", color: "#475569" }}>Trạng thái vận chuyển:</span>
+            <div style={{ fontSize: "16px", fontWeight: "900", color: currentStatus.color, marginTop: "2px" }}>
+              ● {currentStatus.label}
+            </div>
           </div>
-          <div className="text-right">
-            <span className="text-sm text-gray-500 mr-2">Tổng giá trị:</span>
-            <span className="text-xl font-bold text-red-600">{order.total.toLocaleString('vi-VN')}đ</span>
+          <div style={{ textAlign: "right" }}>
+            <span style={{ fontSize: "14px", fontWeight: "800", color: "#475569" }}>Tổng giá trị hóa đơn:</span>
+            <div style={{ fontSize: "22px", fontWeight: "900", color: "#dc2626", marginTop: "2px" }}>
+              {Number(order.totalAmount).toLocaleString("vi-VN")} đ
+            </div>
           </div>
         </div>
+
       </div>
     </div>
   );
