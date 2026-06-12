@@ -1,422 +1,208 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import orderService from "../../services/orderService"; 
 
 export default function Cart() {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "Điện thoại iPhone 15 Pro",
-      price: 25990000,
-      quantity: 1,
-      image:
-        "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=150&auto=format&fit=crop&q=60",
-    },
-    {
-      id: 3,
-      name: "Tai nghe Bluetooth Sony",
-      price: 2990000,
-      quantity: 2,
-      image:
-        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=150&auto=format&fit=crop&q=60",
-    },
-  ]);
+  const navigate = useNavigate();
 
+  // 1. Quản lý trạng thái Giỏ hàng lấy từ localStorage
+  const [cartItems, setCartItems] = useState(() => {
+    const rawCart = localStorage.getItem("cartItems");
+    return rawCart ? JSON.parse(rawCart) : [];
+  });
+
+  // 2. Quản lý trạng thái User (Đã có sẵn phone và address từ AuthController mới)
+  const [currentUser, setCurrentUser] = useState(() => {
+    const rawUser = localStorage.getItem("currentUser") || localStorage.getItem("user");
+    return rawUser ? JSON.parse(rawUser) : null;
+  });
+
+  // 3. Đồng bộ dữ liệu khi hệ thống có thay đổi cục bộ
+  useEffect(() => {
+    const syncData = () => {
+      const rawUser = localStorage.getItem("currentUser") || localStorage.getItem("user");
+      setCurrentUser(rawUser ? JSON.parse(rawUser) : null);
+      
+      const rawCart = localStorage.getItem("cartItems");
+      if (rawCart) setCartItems(JSON.parse(rawCart));
+    };
+
+    window.addEventListener("cart_updated", syncData);
+    return () => window.removeEventListener("cart_updated", syncData);
+  }, []);
+
+  // 4. Hàm tăng / giảm số lượng sản phẩm
   const updateQuantity = (id, amount) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) => {
+    setCartItems((prevItems) => {
+      const newItems = prevItems.map((item) => {
         if (item.id === id) {
           const newQuantity = item.quantity + amount;
-
-          // 1. Chặn giới hạn dưới (Không cho nhỏ hơn 1)
           if (newQuantity < 1) return item;
-
-          // 2. Chặn giới hạn trên (Ví dụ: Tối đa chỉ cho mua 10 cái)
-          if (newQuantity > 10) {
-            alert(
-              "Số lượng sản phẩm trong giỏ hàng đã đạt giới hạn tối đa (tối đa 10 cái)!",
-            );
-            return item;
-          }
-
           return { ...item, quantity: newQuantity };
         }
         return item;
-      }),
-    );
+      });
+
+      localStorage.setItem("cartItems", JSON.stringify(newItems));
+      setTimeout(() => {
+        window.dispatchEvent(new Event("cart_updated"));
+      }, 0);
+
+      return newItems;
+    });
   };
 
+  // 5. Hàm xóa sản phẩm khỏi giỏ
   const removeItem = (id) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
+    if (window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) {
+      const filteredItems = cartItems.filter((item) => item.id !== id);
+      setCartItems(filteredItems);
+      localStorage.setItem("cartItems", JSON.stringify(filteredItems));
+      
+      setTimeout(() => {
+        window.dispatchEvent(new Event("cart_updated"));
+      }, 0);
+    }
   };
 
-  const totalPrice = cartItems.reduce(
+  // 6. Tính tổng tiền giỏ hàng
+  const totalCartPrice = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
-    0,
+    0
   );
 
-  React.useEffect(() => {
-    localStorage.setItem("cartItems", JSON.stringify(cartItems));
-    // Bắn tín hiệu thông báo cho Navbar biết giỏ hàng đã thay đổi
-    window.dispatchEvent(new Event("cart_updated"));
-  }, [cartItems]);
+  // 7. 🚀 HÀM ĐẶT HÀNG ĐỒNG BỘ DỮ LIỆU ĐỘNG TỪ BẢNG USER (AUTH)
+  const handleCheckout = async () => {
+    const checkUser = localStorage.getItem("currentUser") || localStorage.getItem("user");
+
+    if (!checkUser) {
+      alert("Bạn chưa đăng nhập! Vui lòng đăng nhập để tiến hành đặt hàng.");
+      navigate("/login");
+      return;
+    }
+
+    const user = JSON.parse(checkUser);
+    console.log("Dữ liệu User hiện tại trong LocalStorage:", user);
+
+    if (cartItems.length === 0) {
+      alert("Giỏ hàng của bạn đang trống!");
+      return;
+    }
+
+    // Đọc chuẩn chữ viết thường (camelCase) từ Object AuthController mới trả ra
+    const finalUserID = user.userID || user.UserID || user.id;
+    const finalName = user.fullName || user.FullName || user.username || "Khách hàng";
+    const finalPhone = user.phone || user.Phone || user.phoneNumber;
+    const finalAddress = user.address || user.Address;
+
+    // Chặn lại nếu dữ liệu thực sự bị trống trong database của tài khoản này
+    if (!finalPhone || !finalAddress || finalPhone === "NULL" || finalAddress === "NULL") {
+      alert(`⚠️ Lỗi hệ thống: Tài khoản của bạn (ID: ${finalUserID}) thực tế trong bảng Users đang để trống trường Số điện thoại hoặc Địa chỉ. Vui lòng cập nhật dữ liệu vào DB rồi thử lại!`);
+      return;
+    }
+
+    const isConfirm = window.confirm("Bạn có chắc chắn muốn đặt mua đơn hàng này không?");
+    if (!isConfirm) return;
+
+    try {
+      const orderData = {
+        UserID: finalUserID,
+        TotalPrice: totalCartPrice,
+        Status: "Pending",
+        ReceiverName: finalName,
+        ReceiverPhone: finalPhone,
+        ReceiverAddress: finalAddress,
+        Items: cartItems.map((item) => ({
+          ProductId: item.id,
+          Quantity: item.quantity,
+          Price: item.price
+        }))
+      };
+
+      console.log("Dữ liệu đóng gói gửi lên API đặt hàng:", orderData);
+
+      const token = localStorage.getItem("token");
+      const response = await orderService.create(orderData, token);
+
+      if (response.status === 200 || response.status === 201) {
+        alert("🎉 Đặt hàng thành công! Đơn hàng đã được ghi nhận vào hệ thống.");
+        setCartItems([]);
+        localStorage.removeItem("cartItems");
+        setTimeout(() => {
+          window.dispatchEvent(new Event("cart_updated"));
+        }, 0);
+        navigate("/"); 
+      }
+    } catch (error) {
+      console.error("Lỗi khi tạo đơn hàng:", error);
+      alert(error.response?.data?.message || "Đã xảy ra lỗi khi đặt hàng. Vui lòng kiểm tra lại!");
+    }
+  };
+
   return (
-    <div
-      style={{
-        maxWidth: "1100px",
-        margin: "40px auto",
-        padding: "0 20px",
-        fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-        color: "#2d3748",
-      }}
-    >
-      <h2
-        style={{
-          fontSize: "26px",
-          fontWeight: "700",
-          marginBottom: "24px",
-          color: "#1a202c",
-        }}
-      >
+    <div style={{ padding: "40px", maxWidth: "1200px", margin: "0 auto", fontFamily: "sans-serif" }}>
+      <h2 style={{ marginBottom: "20px", borderBottom: "2px solid #edf2f7", paddingBottom: "10px" }}>
         🛒 Giỏ hàng của bạn
       </h2>
 
       {cartItems.length === 0 ? (
-        <p
-          style={{
-            padding: "30px",
-            backgroundColor: "#f7fafc",
-            borderRadius: "12px",
-            textAlign: "center",
-            fontSize: "16px",
-          }}
-        >
-          Giỏ hàng đang trống.{" "}
-          <Link
-            to="/"
-            style={{
-              color: "#3182ce",
-              fontWeight: "600",
-              textDecoration: "none",
-            }}
-          >
-            Mua sắm ngay
+        <div style={{ textAlign: "center", padding: "40px 0" }}>
+          <p style={{ color: "#718096", fontSize: "18px" }}>Giỏ hàng đang trống.</p>
+          <Link to="/" style={{ color: "#3182ce", textDecoration: "none", fontWeight: "600" }}>
+            Quay lại mua sắm ngay
           </Link>
-        </p>
+        </div>
       ) : (
         <div>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              backgroundColor: "#ffffff",
-              boxShadow:
-                "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)",
-              borderRadius: "12px",
-              overflow: "hidden",
-              marginBottom: "30px",
-            }}
-          >
+          <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "30px" }}>
             <thead>
-              <tr
-                style={{
-                  backgroundColor: "#f7fafc",
-                  borderBottom: "2px solid #edf2f7",
-                }}
-              >
-                <th
-                  style={{
-                    padding: "16px",
-                    textAlign: "left",
-                    fontWeight: "600",
-                    color: "#4a5568",
-                  }}
-                >
-                  Sản phẩm
-                </th>
-                <th
-                  style={{
-                    padding: "16px",
-                    textAlign: "center",
-                    fontWeight: "600",
-                    color: "#4a5568",
-                    width: "140px",
-                  }}
-                >
-                  Giá
-                </th>
-                <th
-                  style={{
-                    padding: "16px",
-                    textAlign: "center",
-                    fontWeight: "600",
-                    color: "#4a5568",
-                    width: "150px",
-                  }}
-                >
-                  Số lượng
-                </th>
-                <th
-                  style={{
-                    padding: "16px",
-                    textAlign: "center",
-                    fontWeight: "600",
-                    color: "#4a5568",
-                    width: "150px",
-                  }}
-                >
-                  Tổng cộng
-                </th>
-                <th
-                  style={{
-                    padding: "16px",
-                    textAlign: "center",
-                    fontWeight: "600",
-                    color: "#4a5568",
-                    width: "100px",
-                  }}
-                >
-                  Hành động
-                </th>
+              <tr style={{ backgroundColor: "#f7fafc", textAlign: "left", borderBottom: "2px solid #e2e8f0" }}>
+                <th style={{ padding: "12px" }}>Sản phẩm</th>
+                <th style={{ padding: "12px" }}>Giá tiền</th>
+                <th style={{ padding: "12px" }}>Số lượng</th>
+                <th style={{ padding: "12px" }}>Tổng cộng</th>
+                <th style={{ padding: "12px" }}>Hành động</th>
               </tr>
             </thead>
             <tbody>
               {cartItems.map((item) => (
-                <tr
-                  key={item.id}
-                  style={{
-                    borderBottom: "1px solid #edf2f7",
-                    transition: "background 0.2s",
-                  }}
-                >
-                  {/* Cột sản phẩm dùng Flexbox xử lý dính chữ */}
-                  <td
-                    style={{
-                      padding: "16px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "16px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "64px",
-                        height: "64px",
-                        minWidth: "64px",
-                        backgroundColor: "#edf2f7",
-                        borderRadius: "8px",
-                        overflow: "hidden",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <img
-                        src={item.image}
-                        alt=""
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                      />
-                    </div>
-                    <span
-                      style={{
-                        fontWeight: "600",
-                        color: "#2d3748",
-                        fontSize: "15px",
-                      }}
-                    >
-                      {item.name}
-                    </span>
+                <tr key={item.id} style={{ borderBottom: "1px solid #edf2f7" }}>
+                  <td style={{ padding: "12px", fontWeight: "600" }}>{item.name}</td>
+                  <td style={{ padding: "12px" }}>{item.price.toLocaleString()}đ</td>
+                  <td style={{ padding: "12px" }}>
+                    <button onClick={() => updateQuantity(item.id, -1)} style={btnQtyStyle}>-</button>
+                    <span style={{ margin: "0 12px", fontWeight: "600" }}>{item.quantity}</span>
+                    <button onClick={() => updateQuantity(item.id, 1)} style={btnQtyStyle}>+</button>
                   </td>
-
-                  <td
-                    style={{
-                      padding: "16px",
-                      textAlign: "center",
-                      fontWeight: "500",
-                      color: "#4a5568",
-                    }}
-                  >
-                    {item.price.toLocaleString()}đ
-                  </td>
-
-                  {/* Cột số lượng căn đều nút bấm */}
-                  <td style={{ padding: "16px", textAlign: "center" }}>
-                    <div
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        border: "1px solid #cbd5e0",
-                        borderRadius: "6px",
-                        overflow: "hidden",
-                      }}
-                    >
-                      <button
-                        onClick={() => updateQuantity(item.id, -1)}
-                        style={{
-                          width: "32px",
-                          height: "32px",
-                          border: "none",
-                          backgroundColor: "#ffffff",
-                          cursor: "pointer",
-                          fontWeight: "600",
-                          fontSize: "16px",
-                          color: "#4a5568",
-                        }}
-                        onMouseOver={(e) =>
-                          (e.target.style.backgroundColor = "#f7fafc")
-                        }
-                        onMouseOut={(e) =>
-                          (e.target.style.backgroundColor = "#ffffff")
-                        }
-                      >
-                        -
-                      </button>
-                      <span
-                        style={{
-                          width: "40px",
-                          textAlign: "center",
-                          fontWeight: "600",
-                          fontSize: "14px",
-                          color: "#2d3748",
-                        }}
-                      >
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => updateQuantity(item.id, 1)}
-                        style={{
-                          width: "32px",
-                          height: "32px",
-                          border: "none",
-                          backgroundColor: "#ffffff",
-                          cursor: "pointer",
-                          fontWeight: "600",
-                          fontSize: "16px",
-                          color: "#4a5568",
-                        }}
-                        onMouseOver={(e) =>
-                          (e.target.style.backgroundColor = "#f7fafc")
-                        }
-                        onMouseOut={(e) =>
-                          (e.target.style.backgroundColor = "#ffffff")
-                        }
-                      >
-                        +
-                      </button>
-                    </div>
-                  </td>
-
-                  <td
-                    style={{
-                      padding: "16px",
-                      textAlign: "center",
-                      fontWeight: "700",
-                      color: "#2b6cb0",
-                    }}
-                  >
+                  <td style={{ padding: "12px", color: "#e53e3e", fontWeight: "600" }}>
                     {(item.price * item.quantity).toLocaleString()}đ
                   </td>
-
-                  <td style={{ padding: "16px", textAlign: "center" }}>
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      style={{
-                        padding: "6px 12px",
-                        backgroundColor: "#fed7d7",
-                        color: "#c53030",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        fontWeight: "600",
-                        fontSize: "13px",
-                      }}
-                      onMouseOver={(e) =>
-                        (e.target.style.backgroundColor = "#feb2b2")
-                      }
-                      onMouseOut={(e) =>
-                        (e.target.style.backgroundColor = "#fed7d7")
-                      }
-                    >
-                      Xóa
-                    </button>
+                  <td style={{ padding: "12px" }}>
+                    <button onClick={() => removeItem(item.id)} style={btnDeleteStyle}>Xóa</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          {/* Hộp tổng kết thiết kế tinh tế bên phải */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-end",
-              backgroundColor: "#ffffff",
-              padding: "24px",
-              borderRadius: "12px",
-              boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)",
-            }}
-          >
-            <h3
-              style={{
-                margin: "0 0 20px 0",
-                fontSize: "18px",
-                fontWeight: "600",
-                color: "#4a5568",
-              }}
-            >
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "15px" }}>
+            <h3 style={{ fontSize: "20px" }}>
               Tổng tiền thanh toán:{" "}
-              <span
-                style={{
-                  color: "#e53e3e",
-                  fontSize: "24px",
-                  fontWeight: "700",
-                  marginLeft: "10px",
-                }}
-              >
-                {totalPrice.toLocaleString()} đ
+              <span style={{ color: "#e53e3e", fontSize: "24px", fontWeight: "700" }}>
+                {totalCartPrice.toLocaleString()}đ
               </span>
             </h3>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-              <Link
-                to="/"
-                style={{
-                  color: "#718096",
-                  fontWeight: "600",
-                  textDecoration: "none",
-                  fontSize: "15px",
-                }}
-              >
-                ← Tiếp tục mua hàng
-              </Link>
-              <Link
-                to="/checkout"
-                style={{
-                  padding: "12px 28px",
-                  backgroundColor: "#3182ce",
-                  color: "#ffffff",
-                  borderRadius: "8px",
-                  textDecoration: "none",
-                  fontWeight: "700",
-                  fontSize: "15px",
-                  boxShadow: "0 4px 6px -1px rgba(49, 130, 206, 0.4)",
-                  transition: "background 0.2s",
-                }}
-                onMouseOver={(e) =>
-                  (e.target.style.backgroundColor = "#2b6cb0")
-                }
-                onMouseOut={(e) => (e.target.style.backgroundColor = "#3182ce")}
-              >
-                Đặt hàng nhanh →
-              </Link>
-            </div>
+            <button onClick={handleCheckout} style={btnCheckoutStyle}>
+              Tiến Hành Mua Hàng ➔
+            </button>
           </div>
         </div>
       )}
     </div>
   );
 }
+
+const btnQtyStyle = { padding: "3px 10px", backgroundColor: "#e2e8f0", border: "none", borderRadius: "4px", cursor: "pointer" };
+const btnDeleteStyle = { padding: "6px 12px", backgroundColor: "#fed7d7", color: "#9b2c2c", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "600" };
+const btnCheckoutStyle = { padding: "14px 30px", backgroundColor: "#3182ce", color: "#fff", border: "none", borderRadius: "8px", fontSize: "18px", fontWeight: "700", cursor: "pointer" };
