@@ -1,5 +1,5 @@
 import React from "react";
-import { X, User, Phone, MapPin, FileText, ShoppingBag } from "lucide-react";
+import { X, User, Phone, MapPin, FileText, ShoppingBag, ShieldCheck } from "lucide-react";
 
 const statusText = {
   0: { label: "Hủy bỏ đơn", color: "#dc2626" },
@@ -33,6 +33,29 @@ const OrderDetail = ({ order, onClose }) => {
         {/* Nội dung hóa đơn cuộn dọc */}
         <div style={{ overflowY: "auto", padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
           
+          {/* KHỐI THÔNG TIN KHÁCH HÀNG THÀNH VIÊN */}
+          {order.user ? (
+            <div style={{ background: "#eff6ff", padding: "18px", borderRadius: "12px", border: "2px solid #2563eb" }}>
+              <h4 style={{ margin: "0 0 12px 0", fontSize: "14px", fontWeight: "900", color: "#1e40af", display: "flex", alignItems: "center", gap: "6px" }}>
+                <ShieldCheck size={16} /> THÔNG TIN TÀI KHOẢN KHÁCH HÀNG (THÀNH VIÊN)
+              </h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", color: "#000000", fontWeight: "700" }}>
+                <div>• Tên tài khoản: <span style={{ fontWeight: "800", color: "#2563eb" }}>{order.user.fullName}</span></div>
+                <div>• Email liên hệ: <span style={{ fontWeight: "800" }}>{order.user.email || "Không có"}</span></div>
+                
+                {/* Đã sửa: Check linh hoạt các trường sdt từ API */}
+                <div>• SĐT đăng ký: <span style={{ fontWeight: "800", color: "#000000" }}>{order.user.phoneNumber || order.user.phone || order.user.phoneNo || "Chưa cập nhật"}</span></div>
+                
+                {/* Bổ sung thêm địa chỉ của tài khoản theo yêu cầu */}
+                <div>• Địa chỉ tài khoản: <span style={{ fontWeight: "800", color: "#475569" }}>{order.user.address || order.user.receiverAddress || "Chưa cập nhật"}</span></div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ background: "#f8fafc", padding: "12px 18px", borderRadius: "12px", border: "2px dashed #cbd5e1", fontSize: "13px", fontWeight: "700", color: "#64748b" }}>
+              📢 Đơn hàng được thực hiện bởi <span style={{ color: "#000000", fontWeight: "800" }}>Khách vãng lai</span>.
+            </div>
+          )}
+
           {/* Khối thông tin giao nhận hàng */}
           <div style={{ background: "#f1f5f9", padding: "18px", borderRadius: "12px", border: "2px solid #cbd5e1" }}>
             <h4 style={{ margin: "0 0 12px 0", fontSize: "14px", fontWeight: "900", color: "#0f172a", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -74,6 +97,7 @@ const OrderDetail = ({ order, onClose }) => {
                         {Number(item.price).toLocaleString("vi-VN")}đ
                       </td>
                       <td style={{ padding: "12px", textAlign: "right", fontWeight: "900", color: "#000000" }}>
+                        {/* Đã sửa: Định dạng hiển thị đầy đủ chuỗi tiền tệ vi-VN */}
                         {(item.quantity * item.price).toLocaleString("vi-VN")}đ
                       </td>
                     </tr>
