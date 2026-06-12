@@ -41,7 +41,12 @@ namespace backend.Controllers
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 FullName = dto.FullName,
                 Email = dto.Email,
-                RoleID = 2
+                Phone = dto.Phone,
+                Address = dto.Address,
+                RoleID = 2,
+                IsActive = true,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
 
             _context.Users.Add(user);
@@ -51,7 +56,7 @@ namespace backend.Controllers
             return Ok(user);
         }
 
-        [HttpPost("login")]
+[HttpPost("login")]
         public async Task<IActionResult> Login(LoginDTO dto)
         {
             var user = await _context.Users
@@ -97,6 +102,7 @@ namespace backend.Controllers
                 signingCredentials: creds
             );
 
+            // 🔥 ĐÃ SỬA: Bổ sung thêm dữ liệu Phone và Address lấy trực tiếp từ database trả về cho React
             return Ok(new
             {
                 token = new JwtSecurityTokenHandler().WriteToken(token),
@@ -107,7 +113,10 @@ namespace backend.Controllers
                     username = user.Username,
                     fullName = user.FullName,
                     email = user.Email,
-                    role = user.Role.RoleName
+                    phone = user.Phone,       // 🚀 Đã thêm cột Phone
+                    address = user.Address,   // 🚀 Đã thêm cột Address
+                    role = user.Role.RoleName,
+                    roleID = user.RoleID      // 🚀 Thêm luôn cái này để file Login.jsx check quyền Admin/Customer cho chuẩn bằng số
                 }
             });
         }

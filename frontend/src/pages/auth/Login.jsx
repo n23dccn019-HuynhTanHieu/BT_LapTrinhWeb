@@ -37,32 +37,30 @@ export default function Login() {
 
       const data = response.data;
 
-      // Lưu token
+      // 1. Lưu token xác thực
       localStorage.setItem('token', data.token);
 
-      // Lưu user
-      localStorage.setItem(
-        'currentUser',
-        JSON.stringify(response.data.user)
-      );
+      // 2. Lưu thông tin user đầy đủ
+      localStorage.setItem('currentUser', JSON.stringify(data.user));
 
-      localStorage.setItem(
-        'token',
-        response.data.token
-      );
+      alert('Đăng nhập thành công 🎉');
 
-      alert('Đăng nhập thành công');
+      // 3. Kích hoạt Navbar và Giỏ hàng cập nhật dữ liệu
+      window.dispatchEvent(new Event('cart_updated'));
 
-      // Điều hướng
-      if (data.user.role === 'Admin') {
+      // 4. Kiểm tra phân quyền dựa theo RoleID của Database của bạn (1 là Admin, 2 là User)
+      const userRole = data.user.RoleID || data.user.roleID || data.user.Role || data.user.role;
+      
+      if (userRole === 1 || userRole === '1' || userRole === 'Admin' || userRole === 'admin') {
+        // Nếu là Admin, dùng window.location.href để load lại giao diện Admin chỉn chu
         window.location.href = '/admin';
       } else {
-        window.location.href = '/';
+        // Nếu là khách, dùng navigate về trang chủ mượt mà
+        navigate('/');
       }
 
     } catch (error) {
       console.error(error);
-
       alert(
         error.response?.data?.message ||
         'Đăng nhập thất bại'
@@ -70,27 +68,17 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
-  };
+  }; // Đã đóng ngoặc hàm handleSubmit chuẩn xác
 
   return (
     <div className="auth-container">
       <div className="auth-card">
+        <h2 className="auth-title">Chào mừng trở lại</h2>
+        <p className="auth-subtitle">Vui lòng đăng nhập tài khoản</p>
 
-        <h2 className="auth-title">
-          Chào mừng trở lại
-        </h2>
-
-        <p className="auth-subtitle">
-          Vui lòng đăng nhập tài khoản
-        </p>
-
-        <form
-          className="auth-form"
-          onSubmit={handleSubmit}
-        >
+        <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Tài khoản</label>
-
             <input
               type="text"
               name="username"
@@ -103,7 +91,6 @@ export default function Login() {
 
           <div className="form-group">
             <label>Mật khẩu</label>
-
             <input
               type="password"
               name="password"
@@ -124,16 +111,12 @@ export default function Login() {
         </form>
 
         <p className="auth-footer">
-          Chưa có tài khoản?
-
-          <Link
-            to="/register"
-            className="auth-link"
-          >
+          Chưa có tài khoản?{' '}
+          <Link to="/register" className="auth-link">
             Đăng ký ngay
           </Link>
         </p>
       </div>
     </div>
   );
-}
+} 

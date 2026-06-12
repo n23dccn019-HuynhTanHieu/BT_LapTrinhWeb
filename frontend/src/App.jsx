@@ -30,8 +30,7 @@ import AdminList from './pages/admin/users/AdminList';
 
 function App() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] =
-    useState('All');
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
   const currentUser = JSON.parse(
     localStorage.getItem('currentUser')
@@ -172,16 +171,12 @@ function App() {
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
               selectedCategory={selectedCategory}
-              setSelectedCategory={
-                setSelectedCategory
-              }
+              setSelectedCategory={setSelectedCategory}
             />
 
             <ProductListCustomer
               searchTerm={searchTerm}
-              selectedCategory={
-                selectedCategory
-              }
+              selectedCategory={selectedCategory}
             />
           </>
         }

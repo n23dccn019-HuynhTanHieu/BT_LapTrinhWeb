@@ -1,4 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { Link, useNavigate } from "react-router-dom";
 
@@ -10,12 +15,15 @@ import {
   FiCreditCard,
 } from "react-icons/fi";
 
+import { getCategories } from "../services/categoryService";
+
 export default function Navbar({
   searchTerm,
   setSearchTerm,
   selectedCategory,
   setSelectedCategory,
 }) {
+
   const navigate = useNavigate();
 
   // Khai báo đầy đủ các State để không lo dính lỗi "not defined"
@@ -25,20 +33,58 @@ export default function Navbar({
 
   const [cartCount, setCartCount] = useState(2);
 
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      const response = await getCategories();
+      console.log("Categories:", response.data);
+      
+      // Sửa ở đây: Truy cập thêm 1 tầng .data để lấy mảng Array(3)
+      if (response.data && Array.isArray(response.data.data)) {
+        setCategories(response.data.data);
+      } else {
+        setCategories([]); // Phòng hờ trường hợp dữ liệu trống
+      }
+    } catch (error) {
+      console.error("Lỗi tải danh mục:", error);
+    }
+  };
+
   useEffect(() => {
     const updateCount = () => {
       const rawCart = localStorage.getItem("cartItems");
+
       if (rawCart) {
         const items = JSON.parse(rawCart);
-        // Tính tổng số lượng tất cả món hàng trong giỏ
-        const total = items.reduce((sum, item) => sum + item.quantity, 0);
+
+        const total = items.reduce(
+          (sum, item) => sum + item.quantity,
+          0
+        );
+
         setCartCount(total);
+      } else {
+        setCartCount(0);
       }
     };
 
-    updateCount(); // Chạy kiểm tra lần đầu khi load trang
-    window.addEventListener("cart_updated", updateCount); // Lắng nghe sự kiện thay đổi
-    return () => window.removeEventListener("cart_updated", updateCount);
+    updateCount();
+
+    window.addEventListener(
+      "cart_updated",
+      updateCount
+    );
+
+    return () =>
+      window.removeEventListener(
+        "cart_updated",
+        updateCount
+      );
   }, []);
 
   const userMenuRef = useRef(null);
@@ -290,32 +336,36 @@ export default function Navbar({
       {/* CATEGORY TABS */}
       <div className="navbar-categories">
         <button
-          className={`category-tab ${selectedCategory === "All" ? "active" : ""}`}
-          onClick={() => setSelectedCategory("All")}
+          className={`category-tab ${
+            selectedCategory === "All"
+              ? "active"
+              : ""
+          }`}
+          onClick={() =>
+            setSelectedCategory("All")
+          }
         >
           Tất cả danh mục
         </button>
 
-        <button
-          className={`category-tab ${selectedCategory === "Mobile" ? "active" : ""}`}
-          onClick={() => setSelectedCategory("Mobile")}
-        >
-          Điện thoại
-        </button>
-
-        <button
-          className={`category-tab ${selectedCategory === "Laptop" ? "active" : ""}`}
-          onClick={() => setSelectedCategory("Laptop")}
-        >
-          Laptop
-        </button>
-
-        <button
-          className={`category-tab ${selectedCategory === "Accessory" ? "active" : ""}`}
-          onClick={() => setSelectedCategory("Accessory")}
-        >
-          Phụ kiện
-        </button>
+        {categories.map((category) => (
+          <button
+            key={category.categoryID}
+            className={`category-tab ${
+              selectedCategory ===
+              category.categoryID
+                ? "active"
+                : ""
+            }`}
+            onClick={() =>
+              setSelectedCategory(
+                category.categoryID
+              )
+            }
+          >
+            {category.categoryName}
+          </button>
+        ))}
       </div>
 
       {/* ========================================================= */}

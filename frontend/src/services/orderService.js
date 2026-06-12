@@ -3,6 +3,14 @@ import axios from "axios";
 const API_URL = "http://localhost:5016/api/order";
 
 const orderService = {
+  // 🚀 THÊM HÀM NÀY: Hàm tạo đơn hàng mới trực tiếp
+  create: (orderData, token) =>
+    axios.post(API_URL, orderData, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }),
+
   getAll: (status, page = 1, pageSize = 10, token) =>
     axios.get(API_URL, {
       params: { status, page, pageSize },

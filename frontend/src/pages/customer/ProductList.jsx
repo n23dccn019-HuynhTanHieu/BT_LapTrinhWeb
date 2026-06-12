@@ -1,141 +1,49 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-
-const MOCK_PRODUCTS = [
-  // TRANG 1
-  {
-    id: 1,
-    name: "Điện thoại iPhone 15 Pro",
-    category: "Điện thoại",
-    price: 28000000,
-    salePrice: 25990000,
-    image:
-      "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&auto=format&fit=crop&q=60",
-  },
-  {
-    id: 2,
-    name: "Laptop Asus Zenbook",
-    category: "Laptop",
-    price: 15500000,
-    salePrice: 13900000,
-    image:
-      "https://images.unsplash.com/photo-1496181130204-755241544e35?w=400&auto=format&fit=crop&q=60",
-  },
-  {
-    id: 3,
-    name: "Tai nghe Bluetooth Sony",
-    category: "Phụ kiện",
-    price: 3500000,
-    salePrice: 2990000,
-    image:
-      "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=400&auto=format&fit=crop&q=60",
-  },
-  {
-    id: 4,
-    name: "Sạc dự phòng Anker 20000mAh",
-    category: "Phụ kiện",
-    price: 1200000,
-    salePrice: 990000,
-    image:
-      "https://images.unsplash.com/photo-1644571669401-9ab344866592?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3Dw=400&auto=format&fit=crop&q=60",
-  },
-
-  // TRANG 2
-  {
-    id: 5,
-    name: "Chuột không dây Logitech G304",
-    category: "Phụ kiện",
-    price: 600000,
-    salePrice: 499000,
-    image:
-      "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=400&auto=format&fit=crop&q=60",
-  },
-  {
-    id: 6,
-    name: "Bàn phím cơ AKKO 3075",
-    category: "Phụ kiện",
-    price: 1650000,
-    salePrice: 1390000,
-    image:
-      "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=400&auto=format&fit=crop&q=60",
-  },
-  {
-    id: 7,
-    name: "Laptop Gaming MSI Cyborg",
-    category: "Laptop",
-    price: 24000000,
-    salePrice: 21490000,
-    image:
-      "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=400&auto=format&fit=crop&q=60",
-  },
-  {
-    id: 8,
-    name: "Balo Laptop chống nước Tech",
-    category: "Phụ kiện",
-    price: 450000,
-    salePrice: null,
-    image:
-      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&auto=format&fit=crop&q=60",
-  },
-
-  // TRANG 3
-  {
-    id: 9,
-    name: "Bàn phím Logitech Pop Keys",
-    category: "Phụ kiện",
-    price: 2200000,
-    salePrice: 1890000,
-    image:
-      "https://images.unsplash.com/photo-1601445638532-3c6f6c3aa1d6?w=400&auto=format&fit=crop&q=60",
-  },
-  {
-    id: 10,
-    name: "Tai nghe chụp tai JBL Tune",
-    category: "Phụ kiện",
-    price: 1500000,
-    salePrice: null,
-    image:
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&auto=format&fit=crop&q=60",
-  },
-  {
-    id: 11,
-    name: "Samsung Galaxy S24 Ultra",
-    category: "Điện thoại",
-    price: 31990000,
-    salePrice: 28990000,
-    image:
-      "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=400&auto=format&fit=crop&q=60",
-  },
-  {
-    id: 12,
-    name: "Cáp sạc nhanh Baseus 100W",
-    category: "Phụ kiện",
-    price: 250000,
-    salePrice: 199000,
-    image:
-      "https://images.unsplash.com/photo-1725304382197-663ae3864750?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?w=400&auto=format&fit=crop&q=60",
-  },
-];
+import productService from "../../services/productService";
 
 export default function ProductList({ searchTerm, selectedCategory }) {
+
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const [maxPrice, setMaxPrice] = useState(999999999);
   const [sortBy, setSortBy] = useState("name-asc");
-
-  // Quản lý phân trang
   const [currentPage, setCurrentPage] = useState(1);
+
   const ITEMS_PER_PAGE = 4;
 
-  // Reset về trang 1 khi bộ lọc thay đổi
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedCategory, maxPrice, sortBy]);
+  }, [selectedCategory, searchTerm, maxPrice]);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await productService.getAll();
+
+      // Backend trả về { totalItems, page, pageSize, data }
+      setProducts(response.data.data || []);
+    } catch (error) {
+      console.error("Lỗi tải sản phẩm:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const addToCart = (product) => {
     const rawCart = localStorage.getItem("cartItems") || "[]";
     let cartItems = JSON.parse(rawCart);
 
-    const existingItem = cartItems.find((item) => item.id === product.id);
-    const finalPrice = product.salePrice || product.price;
+    const existingItem = cartItems.find(
+      (item) => item.id === product.productID
+    );
+
+    const finalPrice =
+      product.promoPrice || product.price;
 
     if (existingItem) {
       if (existingItem.quantity >= 10) {
@@ -147,10 +55,10 @@ export default function ProductList({ searchTerm, selectedCategory }) {
       existingItem.quantity += 1;
     } else {
       cartItems.push({
-        id: product.id,
-        name: product.name,
+        id: product.productID,
+        name: product.productName,
         price: finalPrice,
-        image: product.image,
+        image: product.thumbnail,
         quantity: 1,
       });
     }
@@ -160,43 +68,45 @@ export default function ProductList({ searchTerm, selectedCategory }) {
     alert(`Đã thêm "${product.name}" vào giỏ hàng thành công!`);
   };
 
-  // 🌟 ĐÃ VÁ LỖI CÚ PHÁP HOÀN CHỈNH CHO ĐOẠN LỌC VÀ SẮP XẾP DỮ LIỆU
-  const filteredProducts = MOCK_PRODUCTS.filter((product) => {
-    const currentSearchTerm = searchTerm || "";
+  // 🌟 ĐÃ VÁ LỖI ÉP KIỂU VÀ ĐỒNG BỘ LOGIC LOC DANH MỤC AN TOÀN
+  const filteredProducts = products
+    .filter((product) => {
+      const currentSearchTerm = searchTerm || "";
 
-    const matchesSearch = product.name
-      .toLowerCase()
-      .includes(currentSearchTerm.toLowerCase());
+      // 1. Lọc theo từ khóa tìm kiếm
+      const matchesSearch = (product.productName || "")
+        .toLowerCase()
+        .includes(currentSearchTerm.toLowerCase());
 
-    const filterCat = selectedCategory
-      ? selectedCategory.trim().toLowerCase().normalize("NFC")
-      : "all";
-    const prodCat = product.category
-      ? product.category.trim().toLowerCase().normalize("NFC")
-      : "";
+      // 2. Ép kiểu dữ liệu danh mục về chuỗi viết thường để so sánh tuyệt đối an toàn
+      const safeSelectedCategory = selectedCategory ? String(selectedCategory).trim().toLowerCase() : "all";
+      const safeProductCategoryID = product.categoryID ? String(product.categoryID).trim().toLowerCase() : "";
 
-    // Cầu nối logic so khớp danh mục thông minh chống Unicode lỗi gõ chữ
-    const matchesCategory =
-      filterCat === "all" ||
-      filterCat === "tất cả danh mục" ||
-      prodCat === filterCat ||
-      ((filterCat.includes("điện") || filterCat.includes("mobile")) &&
-        (prodCat.includes("điện") || prodCat.includes("mobile"))) ||
-      ((filterCat.includes("phụ") || filterCat.includes("accessory")) &&
-        (prodCat.includes("phụ") || prodCat.includes("accessory"))) ||
-      (filterCat.includes("laptop") && prodCat.includes("laptop"));
+      // Điều kiện lọc danh mục: nếu là 'all' thì luôn đúng, ngược lại thì khớp ID
+      const matchesCategory =
+        safeSelectedCategory === "all" ||
+        safeProductCategoryID === safeSelectedCategory;
 
-    const currentPrice = product.salePrice || product.price;
-    const matchesPrice = currentPrice <= maxPrice;
+      // 3. Lọc theo giá tiền
+      const currentPrice = product.promoPrice || product.price;
 
-    return matchesSearch && matchesCategory && matchesPrice;
-  }).sort((a, b) => {
-    const priceA = a.salePrice || a.price;
-    const priceB = b.salePrice || b.price;
-    if (sortBy === "price-asc") return priceA - priceB;
-    if (sortBy === "price-desc") return priceB - priceA;
-    return a.name.localeCompare(b.name);
-  });
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        currentPrice <= maxPrice
+      );
+    })
+    .sort((a, b) => {
+      const priceA = a.promoPrice || a.price;
+      const priceB = b.promoPrice || b.price;
+
+      if (sortBy === "price-asc") return priceA - priceB;
+      if (sortBy === "price-desc") return priceB - priceA;
+
+      return (a.productName || "").localeCompare(
+        b.productName || ""
+      );
+    });
 
   // Tính toán cắt mảng hiển thị theo trang
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
@@ -205,6 +115,10 @@ export default function ProductList({ searchTerm, selectedCategory }) {
     startIndex,
     startIndex + ITEMS_PER_PAGE,
   );
+
+  if (loading) {
+    return <h2>Đang tải sản phẩm...</h2>;
+  }
 
   return (
     <div>
@@ -300,7 +214,7 @@ export default function ProductList({ searchTerm, selectedCategory }) {
               </div>
             ) : (
               displayedProducts.map((product) => (
-                <div key={product.id} className="product-card">
+                <div key={product.productID} className="product-card">
                   <div
                     style={{
                       height: "200px",
@@ -310,7 +224,7 @@ export default function ProductList({ searchTerm, selectedCategory }) {
                       position: "relative",
                     }}
                   >
-                    {product.salePrice && (
+                    {product.promoPrice && (
                       <div
                         style={{
                           position: "absolute",
@@ -327,7 +241,7 @@ export default function ProductList({ searchTerm, selectedCategory }) {
                       >
                         -
                         {Math.round(
-                          ((product.price - product.salePrice) /
+                          ((product.price - product.promoPrice) /
                             product.price) *
                             100
                         )}
@@ -336,8 +250,8 @@ export default function ProductList({ searchTerm, selectedCategory }) {
                     )}
 
                     <img
-                      src={product.image}
-                      alt={product.name}
+                      src={product.thumbnail}
+                      alt={product.productName}
                       className="product-card-img"
                       style={{
                         width: "100%",
@@ -351,16 +265,16 @@ export default function ProductList({ searchTerm, selectedCategory }) {
                       }}
                     />
                   </div>
-                  <h4 className="product-card-title">{product.name}</h4>
+                  <h4 className="product-card-title">{product.productName}</h4>
 
                   <div className="product-card-price">
-                    {product.salePrice ? (
+                    {product.promoPrice ? (
                       <>
                         <span className="price-old">
                           {product.price.toLocaleString()}đ
                         </span>
                         <span className="price-new">
-                          {product.salePrice.toLocaleString()}đ
+                          {product.promoPrice.toLocaleString()}đ
                         </span>
                       </>
                     ) : (
@@ -372,7 +286,7 @@ export default function ProductList({ searchTerm, selectedCategory }) {
 
                   <div className="product-card-actions">
                     <Link
-                      to={`/product/${product.id}`}
+                      to={`/product/${product.productID}`}
                       className="btn-view-detail"
                     >
                       Chi tiết

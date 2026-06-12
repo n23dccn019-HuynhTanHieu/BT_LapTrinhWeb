@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BCrypt.Net;
+using backend.DTOs.Admin;
+using backend.Models;
 
 namespace backend.Controllers
 {
@@ -158,6 +160,126 @@ namespace backend.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Password changed" });
+        }
+
+        //ADMIN GET ADMIN
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admins")]
+        public async Task<IActionResult> GetAdmins()
+        {
+            var admins = await _context.Users
+                .Include(x => x.Role)
+                .Where(x => x.Role.RoleName == "Admin")
+                .Select(x => new
+                {
+                    x.UserID,
+                    x.Username,
+                    x.FullName,
+                    x.Email,
+                    x.Phone,
+                    x.Address,
+                    x.IsActive,
+                    x.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(admins);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("admins")]
+        public async Task<IActionResult> CreateAdmin(CreateAdminDto dto)
+        {
+            bool exists = await _context.Users
+                .AnyAsync(x => x.Username == dto.Username);
+
+            if (exists)
+                return BadRequest("Username already exists");
+
+            var admin = new User
+            {
+                Username = dto.Username,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                FullName = dto.FullName,
+                Email = dto.Email,
+                Phone = dto.Phone,
+                Address = dto.Address,
+                RoleID = 1, // Admin
+                IsActive = true,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+
+            _context.Users.Add(admin);
+            await _context.SaveChangesAsync();
+
+            return Ok(admin);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("admins/{id}")]
+        public async Task<IActionResult> UpdateAdmin(
+            int id,
+            UpdateAdminDto dto)
+        {
+            var admin = await _context.Users.FindAsync(id);
+
+            if (admin == null)
+                return NotFound();
+
+            admin.FullName = dto.FullName;
+            admin.Email = dto.Email;
+            admin.Phone = dto.Phone;
+            admin.Address = dto.Address;
+            admin.IsActive = dto.IsActive;
+            admin.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(admin);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("admins/{id}/password")]
+        public async Task<IActionResult> ChangeAdminPassword(
+            int id,
+            ChangePasswordDto dto)
+        {
+            var admin = await _context.Users.FindAsync(id);
+
+            if (admin == null)
+                return NotFound();
+
+            admin.PasswordHash =
+                BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+
+            admin.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Password updated successfully"
+            });
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("admins/{id}")]
+        public async Task<IActionResult> DeleteAdmin(int id)
+        {
+            var admin = await _context.Users.FindAsync(id);
+
+            if (admin == null)
+                return NotFound();
+
+            _context.Users.Remove(admin);
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Admin deleted successfully"
+            });
         }
     }
 }

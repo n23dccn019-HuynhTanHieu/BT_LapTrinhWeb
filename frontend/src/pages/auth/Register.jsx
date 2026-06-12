@@ -9,6 +9,8 @@ export default function Register() {
     fullName: '',
     username: '',
     email: '',
+    phone: '',
+    address: '',
     password: '',
     confirmPassword: '',
   });
@@ -50,6 +52,8 @@ export default function Register() {
         fullName: formData.fullName,
         username: formData.username,
         email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
         password: formData.password,
       });
 
@@ -121,6 +125,32 @@ export default function Register() {
               className="auth-input"
               placeholder="email@gmail.com"
               value={formData.email}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Số điện thoại</label>
+
+            <input
+              type="text"
+              name="phone"
+              className="auth-input"
+              placeholder="0901234567"
+              value={formData.phone}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Địa chỉ</label>
+
+            <input
+              type="text"
+              name="address"
+              className="auth-input"
+              placeholder="TP. Hồ Chí Minh"
+              value={formData.address}
               onChange={handleChange}
             />
           </div>
