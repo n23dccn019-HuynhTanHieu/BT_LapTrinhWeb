@@ -5,7 +5,6 @@ import {
   Users, 
   ShoppingCart, 
   DollarSign, 
-  Calendar, 
   TrendingUp 
 } from "lucide-react";
 import { 
@@ -27,7 +26,7 @@ const Dashboard = () => {
   });
 
   const [revenueData, setRevenueData] = useState([]);
-  const [timeFrame, setTimeFrame] = useState("month");
+  const [timeFrame, setTimeFrame] = useState("month"); // Các giá trị: "day" | "week" | "month"
 
   useEffect(() => { loadOverview(); }, []);
   useEffect(() => { loadRevenue(); }, [timeFrame]);
@@ -41,18 +40,49 @@ const Dashboard = () => {
 
   const loadRevenue = async () => {
     try {
-      const res = timeFrame === "day"
-          ? await dashboardService.getRevenueByDay()
-          : await dashboardService.getRevenueByMonth();
+      let res;
+      // 1. Phân luồng gọi chính xác API theo timeFrame
+      if (timeFrame === "day") {
+        res = await dashboardService.getRevenueByDay();
+      } else if (timeFrame === "week") {
+        res = await dashboardService.getRevenueByWeek();
+      } else {
+        res = await dashboardService.getRevenueByMonth();
+      }
 
-      const formattedData = res.data.map(item => ({
-        ...item,
-        displayTime: timeFrame === "day"
-          ? new Date(item.date).toLocaleDateString("vi-VN", { day: 'numeric', month: 'short' })
-          : `${item.month}/${item.year}`
-      }));
+      // 2. Format dữ liệu linh hoạt cho từng loại dữ liệu trả về từ Backend
+      const formattedData = res.data.map(item => {
+        let displayTime = "";
+        
+        if (timeFrame === "day") {
+          displayTime = new Date(item.date).toLocaleDateString("vi-VN", { day: 'numeric', month: 'short' });
+        } else if (timeFrame === "week") {
+          // Xử lý hiển thị tuần: Ưu tiên nếu backend trả về thuộc tính "week"
+          if (item.week) {
+            displayTime = `Tuần ${item.week}/${item.year || 2026}`;
+          } else if (item.date || item.startDate) {
+            // Nếu backend trả về ngày bắt đầu của tuần đó dưới dạng chuỗi ngày tháng
+            displayTime = "T. " + new Date(item.date || item.startDate).toLocaleDateString("vi-VN", { day: 'numeric', month: 'short' });
+          } else {
+            displayTime = item.label || "Không rõ";
+          }
+        } else {
+          // Mốc theo tháng
+          displayTime = `${item.month}/${item.year}`;
+        }
+
+        return {
+          ...item,
+          displayTime, // Key bắt buộc để trục X của biểu đồ và cột đầu tiên của bảng đọc dữ liệu
+          revenue: item.revenue || 0
+        };
+      });
+      
       setRevenueData(formattedData);
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error("Lỗi đồng bộ dữ liệu doanh thu:", err); 
+      setRevenueData([]); // Tránh lỗi crash giao diện nếu API tuần chưa có dữ liệu hoặc lỗi 404
+    }
   };
 
   return (
@@ -68,19 +98,56 @@ const Dashboard = () => {
           <p style={{ fontSize: '14px', color: '#0f172a', fontWeight: '700', marginTop: '6px' }}>Theo dõi hiệu suất kinh doanh thực tế toàn sàn.</p>
         </div>
 
-        {/* Tab chuyển đổi thời gian */}
+        {/* Tab chuyển đổi 3 mốc thời gian: Ngày, Tuần, Tháng */}
         <div style={{ display: 'flex', background: '#e2e8f0', padding: '4px', borderRadius: '12px', border: '1px solid #cbd5e1' }}>
           <button
             onClick={() => setTimeFrame("day")}
-            className={`category-tab ${timeFrame === 'day' ? 'active' : ''}`}
-            style={{ padding: '8px 18px', fontSize: '13px', borderRadius: '8px', fontWeight: '800', color: timeFrame === 'day' ? '#2563eb' : '#334155' }}
+            style={{ 
+              padding: '8px 18px', 
+              fontSize: '13px', 
+              borderRadius: '8px', 
+              fontWeight: '800', 
+              border: 'none',
+              cursor: 'pointer',
+              background: timeFrame === 'day' ? '#ffffff' : 'transparent',
+              boxShadow: timeFrame === 'day' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              color: timeFrame === 'day' ? '#2563eb' : '#334155',
+              transition: 'all 0.2s'
+            }}
           >
             Theo ngày
           </button>
           <button
+            onClick={() => setTimeFrame("week")}
+            style={{ 
+              padding: '8px 18px', 
+              fontSize: '13px', 
+              borderRadius: '8px', 
+              fontWeight: '800', 
+              border: 'none',
+              cursor: 'pointer',
+              background: timeFrame === 'week' ? '#ffffff' : 'transparent',
+              boxShadow: timeFrame === 'week' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              color: timeFrame === 'week' ? '#2563eb' : '#334155',
+              transition: 'all 0.2s'
+            }}
+          >
+            Theo tuần
+          </button>
+          <button
             onClick={() => setTimeFrame("month")}
-            className={`category-tab ${timeFrame === 'month' ? 'active' : ''}`}
-            style={{ padding: '8px 18px', fontSize: '13px', borderRadius: '8px', fontWeight: '800', color: timeFrame === 'month' ? '#2563eb' : '#334155' }}
+            style={{ 
+              padding: '8px 18px', 
+              fontSize: '13px', 
+              borderRadius: '8px', 
+              fontWeight: '800', 
+              border: 'none',
+              cursor: 'pointer',
+              background: timeFrame === 'month' ? '#ffffff' : 'transparent',
+              boxShadow: timeFrame === 'month' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              color: timeFrame === 'month' ? '#2563eb' : '#334155',
+              transition: 'all 0.2s'
+            }}
           >
             Theo tháng
           </button>
@@ -91,7 +158,7 @@ const Dashboard = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px', width: '100%' }}>
         
         {/* Card 1 */}
-        <div className="product-card" style={{ padding: '24px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left', margin: 0, border: '2px solid #cbd5e1' }}>
+        <div className="product-card" style={{ background: '#ffffff', padding: '24px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left', margin: 0, borderRadius: '16px', border: '2px solid #cbd5e1' }}>
           <div>
             <p style={{ fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', color: '#1e293b', letterSpacing: '0.5px', margin: 0 }}>Tổng sản phẩm</p>
             <h3 style={{ fontSize: '30px', fontWeight: '900', margin: '4px 0 0 0', color: '#000000' }}>{overview.totalProducts}</h3>
@@ -100,7 +167,7 @@ const Dashboard = () => {
         </div>
 
         {/* Card 2 */}
-        <div className="product-card" style={{ padding: '24px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left', margin: 0, border: '2px solid #cbd5e1' }}>
+        <div className="product-card" style={{ background: '#ffffff', padding: '24px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left', margin: 0, borderRadius: '16px', border: '2px solid #cbd5e1' }}>
           <div>
             <p style={{ fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', color: '#1e293b', letterSpacing: '0.5px', margin: 0 }}>Khách hàng</p>
             <h3 style={{ fontSize: '30px', fontWeight: '900', margin: '4px 0 0 0', color: '#000000' }}>{overview.totalUsers}</h3>
@@ -109,7 +176,7 @@ const Dashboard = () => {
         </div>
 
         {/* Card 3 */}
-        <div className="product-card" style={{ padding: '24px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left', margin: 0, border: '2px solid #cbd5e1' }}>
+        <div className="product-card" style={{ background: '#ffffff', padding: '24px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left', margin: 0, borderRadius: '16px', border: '2px solid #cbd5e1' }}>
           <div>
             <p style={{ fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', color: '#1e293b', letterSpacing: '0.5px', margin: 0 }}>Đơn hàng</p>
             <h3 style={{ fontSize: '30px', fontWeight: '900', margin: '4px 0 0 0', color: '#000000' }}>{overview.totalOrders}</h3>
@@ -118,9 +185,9 @@ const Dashboard = () => {
         </div>
 
         {/* Card 4 */}
-        <div className="product-card" style={{ padding: '24px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left', margin: 0, border: '2px solid #cbd5e1' }}>
+        <div className="product-card" style={{ background: '#ffffff', padding: '24px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left', margin: 0, borderRadius: '16px', border: '2px solid #cbd5e1' }}>
           <div>
-            <p style={{ fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', color: '#1e293b', letterSpacing: '0.5px', margin: 0 }}>Doanh thu</p>
+            <p style={{ fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', color: '#1e293b', letterSpacing: '0.5px', margin: 0 }}>Doanh thu tổng</p>
             <h3 style={{ fontSize: '26px', fontWeight: '900', margin: '4px 0 0 0', color: '#dc2626' }}>{overview.revenue.toLocaleString("vi-VN")} đ</h3>
           </div>
           <div style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#059669', padding: '14px', borderRadius: '12px', display: 'flex' }}><DollarSign size={22} strokeWidth={2.5} /></div>
@@ -134,7 +201,9 @@ const Dashboard = () => {
         {/* Khung chứa đồ thị */}
         <div style={{ background: '#ffffff', borderRadius: '16px', border: '2px solid #cbd5e1', padding: '24px', minWidth: 0 }}>
           <div style={{ marginBottom: '20px' }}>
-            <h3 style={{ margin: 0, fontWeight: '900', fontSize: '16px', color: '#000000' }}>Biểu đồ xu hướng dòng tiền</h3>
+            <h3 style={{ margin: 0, fontWeight: '900', fontSize: '16px', color: '#000000' }}>
+              Biểu đồ xu hướng dòng tiền ({timeFrame === 'day' ? 'Theo ngày' : timeFrame === 'week' ? 'Theo tuần' : 'Theo tháng'})
+            </h3>
           </div>
           <div style={{ width: '100%', height: '300px', position: 'relative' }}>
             <ResponsiveContainer width="100%" height="100%">

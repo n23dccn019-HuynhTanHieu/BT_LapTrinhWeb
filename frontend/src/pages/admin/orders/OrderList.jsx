@@ -16,13 +16,21 @@ const statusStyles = {
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState("All");
-  const [monthFilter, setMonthFilter] = useState(""); // Lưu tháng dạng YYYY-MM (Ví dụ: "2026-06")
+  const [monthFilter, setMonthFilter] = useState(""); // Lưu tháng dạng YYYY-MM
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Gọi lại API khi thay đổi bộ lọc trạng thái
   useEffect(() => {
     fetchOrders();
   }, [statusFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, monthFilter, searchTerm, sortBy]);
 
   const fetchOrders = async () => {
     try {
@@ -69,14 +77,61 @@ const OrderList = () => {
     }
   };
 
-  // TIẾN HÀNH LỌC CLIENT THEO THÁNG - NĂM
-  const filteredOrders = orders.filter((order) => {
-    if (!monthFilter) return true; // Nếu không chọn tháng nào, hiển thị toàn bộ
-    
-    // Tách chuỗi ngày từ DB (Ví dụ "2026-06-11T..." thành "2026-06") để so khớp với input type="month"
-    const orderMonthFormatted = order.orderDate.substring(0, 7); 
-    return orderMonthFormatted === monthFilter;
-  });
+  // LỌC CLIENT THEO THÁNG - NĂM VÀ TÌM KIẾM
+  const filteredOrders = orders
+    .filter((order) => {
+      // Filter tháng
+      if (monthFilter) {
+        const orderMonthFormatted = order.orderDate.substring(0, 7);
+        if (orderMonthFormatted !== monthFilter) {
+          return false;
+        }
+      }
+
+      // Search
+      if (searchTerm.trim()) {
+        const keyword = searchTerm.toLowerCase();
+        const orderIdMatch = order.orderID?.toString().includes(keyword);
+        const customerMatch = order.user?.fullName?.toLowerCase().includes(keyword);
+
+        if (!orderIdMatch && !customerMatch) {
+          return false;
+        }
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "date_desc":
+          return new Date(b.orderDate) - new Date(a.orderDate);
+        case "date_asc":
+          return new Date(a.orderDate) - new Date(b.orderDate);
+        case "amount_desc":
+          return b.totalAmount - a.totalAmount;
+        case "amount_asc":
+          return a.totalAmount - b.totalAmount;
+        default:
+          return 0;
+      }
+    });
+
+  const totalPages = Math.ceil(filteredOrders.length / pageSize);
+
+  const currentOrders = filteredOrders.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  // Style chung cho các nút phân trang
+  const basePageButtonStyle = {
+    padding: "8px 14px",
+    borderRadius: "8px",
+    border: "2px solid #cbd5e1",
+    fontWeight: "700",
+    fontSize: "14px",
+    transition: "all 0.15s ease",
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px", width: "100%", WebkitFontSmoothing: "subpixel-antialiased" }}>
@@ -96,63 +151,105 @@ const OrderList = () => {
       {/* Vùng bộ lọc tích hợp */}
       <div style={{ background: "#ffffff", padding: "18px", borderRadius: "16px", border: "2px solid #cbd5e1", display: "flex", flexDirection: "column", gap: "16px" }}>
         
-      {/* Bộ lọc theo Tháng - Năm */}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-        <div style={{ position: "relative", display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "14px", fontWeight: "800", color: "#000000" }}>Lọc theo tháng/năm đặt:</span>
-          
-          <input
-            // Mẹo: Mặc định để type là text để hiện placeholder theo ý muốn
-            type={monthFilter ? "month" : "text"} 
-            placeholder="mm / yyyy"
-            // Khi người dùng click vào ô, lập tức biến thành ô chọn tháng
-            onFocus={(e) => (e.target.type = "month")}
-            // Khi người dùng click ra ngoài mà chưa chọn gì, biến lại thành text để hiện placeholder
-            onBlur={(e) => {
-              if (!e.target.value) e.target.type = "text";
-            }}
-            className="custom-month-input"
-            style={{
-              boxSizing: "border-box",
-              padding: "8px 12px",
-              border: "2px solid #cbd5e1",
-              borderRadius: "12px",
-              fontWeight: "700",
-              color: "#000000", // Màu chữ đen
-              fontSize: "14px",
-              height: "44px",
-              outline: "none",
-              cursor: "pointer",
-              background: "#ffffff", // Nền trắng
-              width: "150px",
-              textAlign: "center"
-            }}
-            value={monthFilter}
-            onChange={(e) => setMonthFilter(e.target.value)}
-          />
-          
-          {/* CSS ép icon lịch và chữ placeholder thành màu đen tuyền */}
-          <style>{`
-            .custom-month-input::-webkit-calendar-picker-indicator {
-              cursor: pointer;
-              filter: invert(0%) sepia(100%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%) !important;
-            }
-            .custom-month-input::placeholder {
-              color: #000000 !important; /* Chữ mm / yyyy màu đen */
-              opacity: 1;
-            }
-          `}</style>
+        {/* Bộ lọc theo Tháng - Năm */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ position: "relative", display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "14px", fontWeight: "800", color: "#000000" }}>Lọc theo tháng/năm đặt:</span>
+            
+            <input
+              type={monthFilter ? "month" : "text"} 
+              placeholder="mm / yyyy"
+              onFocus={(e) => (e.target.type = "month")}
+              onBlur={(e) => {
+                if (!e.target.value) e.target.type = "text";
+              }}
+              className="custom-month-input"
+              style={{
+                boxSizing: "border-box",
+                padding: "8px 12px",
+                border: "2px solid #cbd5e1",
+                borderRadius: "12px",
+                fontWeight: "700",
+                color: "#000000",
+                fontSize: "14px",
+                height: "44px",
+                outline: "none",
+                cursor: "pointer",
+                background: "#ffffff",
+                width: "150px",
+                textAlign: "center"
+              }}
+              value={monthFilter}
+              onChange={(e) => setMonthFilter(e.target.value)}
+            />
+            
+            {/* CSS bổ trợ cho placeholder và icon lịch */}
+            <style>{`
+              .custom-month-input::-webkit-calendar-picker-indicator {
+                cursor: pointer;
+                filter: invert(0%) sepia(100%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%) !important;
+              }
+              .custom-month-input::placeholder {
+                color: #000000 !important;
+                opacity: 0.7;
+              }
+              .custom-search-input::placeholder {
+                color: #64748b !important;
+              }
+            `}</style>
 
-          {monthFilter && (
-            <button 
-              onClick={() => setMonthFilter("")}
-              style={{ background: "#ef4444", color: "#ffffff", border: "none", padding: "8px 12px", borderRadius: "8px", fontWeight: "800", cursor: "pointer", height: "40px" }}
-            >
-              Xóa lọc tháng
-            </button>
-          )}
+            {monthFilter && (
+              <button 
+                onClick={() => setMonthFilter("")}
+                style={{ background: "#ef4444", color: "#ffffff", border: "none", padding: "8px 12px", borderRadius: "8px", fontWeight: "800", cursor: "pointer", height: "40px" }}
+              >
+                Xóa lọc tháng
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+
+        {/* Ô Tìm Kiếm và Bộ lọc Sắp xếp */}
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+          <input
+            type="text"
+            placeholder="Tìm mã đơn hoặc khách hàng..."
+            className="custom-search-input"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              padding: "10px 12px",
+              borderRadius: "10px",
+              border: "2px solid #cbd5e1",
+              minWidth: "250px",
+              fontWeight: "700",
+              background: "#ffffff",
+              color: "#000000",
+              outline: "none"
+            }}
+          />
+
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            style={{
+              padding: "10px 12px",
+              borderRadius: "10px",
+              border: "2px solid #cbd5e1",
+              fontWeight: "700",
+              background: "#ffffff",
+              color: "#000000",
+              outline: "none",
+              cursor: "pointer"
+            }}
+          >
+            <option value="" style={{ background: "#ffffff", color: "#000000" }}>Sắp xếp mặc định</option>
+            <option value="date_desc" style={{ background: "#ffffff", color: "#000000" }}>Ngày mới nhất</option>
+            <option value="date_asc" style={{ background: "#ffffff", color: "#000000" }}>Ngày cũ nhất</option>
+            <option value="amount_desc" style={{ background: "#ffffff", color: "#000000" }}>Tổng tiền giảm dần</option>
+            <option value="amount_asc" style={{ background: "#ffffff", color: "#000000" }}>Tổng tiền tăng dần</option>
+          </select>
+        </div>
 
         {/* Hệ thống Tab lọc trạng thái đơn hàng */}
         <div style={{ display: "flex", borderBottom: "2px solid #e2e8f0", overflowX: "auto", paddingBottom: "4px", gap: "6px" }}>
@@ -196,27 +293,22 @@ const OrderList = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredOrders.map((order) => {
+            {currentOrders.map((order) => {
               const currentStyle = statusStyles[order.orderStatus] || { text: "Không rõ", bg: "#f1f5f9", color: "#0f172a", border: "#cbd5e1" };
               return (
                 <tr key={order.orderID} style={{ borderBottom: "1px solid #cbd5e1", background: "#ffffff" }}>
-                  
                   <td style={{ padding: "16px", fontWeight: "900", color: "#2563eb" }}>
                     #{order.orderID}
                   </td>
-
                   <td style={{ padding: "16px", fontWeight: "800", color: "#000000" }}>
                     {order.user?.fullName ?? "Khách vãng lai"}
                   </td>
-
                   <td style={{ padding: "16px", fontWeight: "700", color: "#334155" }}>
                     {new Date(order.orderDate).toLocaleDateString("vi-VN")}
                   </td>
-
                   <td style={{ padding: "16px", fontWeight: "900", color: "#000000" }}>
                     {Number(order.totalAmount).toLocaleString("vi-VN")} đ
                   </td>
-
                   <td style={{ padding: "16px" }}>
                     <select
                       value={order.orderStatus}
@@ -234,7 +326,6 @@ const OrderList = () => {
                         width: "100%"
                       }}
                     >
-                      {/* Bổ sung background trắng cho các ô tùy chọn trạng thái */}
                       <option value={1} style={{ background: "#ffffff", color: "#000000" }}>Chờ xử lý</option>
                       <option value={2} style={{ background: "#ffffff", color: "#000000" }}>Đang chuẩn bị</option>
                       <option value={3} style={{ background: "#ffffff", color: "#000000" }}>Đang giao</option>
@@ -243,7 +334,6 @@ const OrderList = () => {
                       <option value={0} style={{ background: "#ffffff", color: "#000000" }}>Hủy đơn hàng</option>
                     </select>
                   </td>
-
                   <td style={{ padding: "16px", textAlign: "right" }}>
                     <button
                       onClick={() => handleViewDetail(order.orderID)}
@@ -252,7 +342,6 @@ const OrderList = () => {
                       <Eye size={14} strokeWidth={3} /> Chi tiết
                     </button>
                   </td>
-
                 </tr>
               );
             })}
@@ -260,13 +349,77 @@ const OrderList = () => {
             {filteredOrders.length === 0 && (
               <tr>
                 <td colSpan={6} style={{ textAlign: "center", padding: "48px", color: "#475569", fontWeight: "800", fontSize: "15px" }}>
-                  Không tìm thấy dữ liệu hóa đơn trong tháng được lựa chọn.
+                  Không tìm thấy dữ liệu hóa đơn thỏa mãn điều kiện lọc.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+
+      {/* VÙNG PHÂN TRANG THEO THIẾT KẾ MỚI */}
+      {totalPages > 1 && (
+        <div 
+          className="pagination" 
+          style={{ 
+            display: "flex", 
+            justifyContent: "center", 
+            alignItems: "center", 
+            gap: "8px", 
+            padding: "10px 20px" 
+          }}
+        >
+          {/* Nút Trước */}
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((prev) => prev - 1)}
+            style={{
+              ...basePageButtonStyle,
+              background: currentPage === 1 ? "#f1f5f9" : "#ffffff",
+              color: currentPage === 1 ? "#94a3b8" : "#000000",
+              cursor: currentPage === 1 ? "not-allowed" : "pointer",
+            }}
+          >
+            Trước
+          </button>
+
+          {/* Danh sách các ô số trang */}
+          {Array.from({ length: totalPages }, (_, index) => {
+            const pageNumber = index + 1;
+            const isPageActive = currentPage === pageNumber;
+            return (
+              <button
+                key={pageNumber}
+                className={isPageActive ? "page-active" : ""}
+                onClick={() => setCurrentPage(pageNumber)}
+                style={{
+                  ...basePageButtonStyle,
+                  background: isPageActive ? "#2563eb" : "#ffffff",
+                  color: isPageActive ? "#ffffff" : "#000000",
+                  borderColor: isPageActive ? "#2563eb" : "#cbd5e1",
+                  cursor: "pointer",
+                }}
+              >
+                {pageNumber}
+              </button>
+            );
+          })}
+
+          {/* Nút Sau */}
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((prev) => prev + 1)}
+            style={{
+              ...basePageButtonStyle,
+              background: currentPage === totalPages ? "#f1f5f9" : "#ffffff",
+              color: currentPage === totalPages ? "#94a3b8" : "#000000",
+              cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+            }}
+          >
+            Sau
+          </button>
+        </div>
+      )}
 
       {/* Modal chi tiết đơn hàng */}
       {selectedOrder && (

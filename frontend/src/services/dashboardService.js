@@ -25,6 +25,13 @@ const dashboardService = {
       getAuthHeader()
     ),
 
+  // THÊM MỚI: API lấy thống kê doanh thu theo tuần
+  getRevenueByWeek: () =>
+    axios.get(
+      `${API_URL}/revenue-by-week`,
+      getAuthHeader()
+    ),
+
   getRevenueByMonth: () =>
     axios.get(
       `${API_URL}/revenue-by-month`,

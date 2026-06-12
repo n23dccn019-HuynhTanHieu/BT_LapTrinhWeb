@@ -48,7 +48,7 @@ export default function Login() {
       // 3. Kích hoạt Navbar và Giỏ hàng cập nhật dữ liệu
       window.dispatchEvent(new Event('cart_updated'));
 
-      // 4. Kiểm tra phân quyền dựa theo RoleID của Database của bạn (1 là Admin, 2 là User)
+      // 4. Kiểm tra phân quyền dựa theo RoleID của Database (1 là Admin, 2 là User)
       const userRole = data.user.RoleID || data.user.roleID || data.user.Role || data.user.role;
       
       if (userRole === 1 || userRole === '1' || userRole === 'Admin' || userRole === 'admin') {
@@ -60,15 +60,34 @@ export default function Login() {
       }
 
     } catch (error) {
-      console.error(error);
-      alert(
-        error.response?.data?.message ||
-        'Đăng nhập thất bại'
-      );
+      console.error("Chi tiết lỗi đăng nhập:", error);
+      
+      // Khai báo biến hứng thông báo lỗi từ server trả về
+      let errorMsg = 'Đăng nhập thất bại';
+
+      if (error.response) {
+        // Vì Backend C# của bạn trả về chuỗi text thuần túy (string), 
+        // nên ta ưu tiên đọc trực tiếp error.response.data trước. 
+        // Nếu data là Object phức tạp thì mới tìm đến trường .message
+        errorMsg = typeof error.response.data === 'string' 
+          ? error.response.data 
+          : (error.response.data?.message || errorMsg);
+          
+        // Bắt riêng mã lỗi 403 (Tài khoản bị khóa) để có thể log log hoặc phân tích riêng nếu cần
+        if (error.response.status === 403) {
+          console.warn("Cảnh báo: Tài khoản này đã bị vô hiệu hóa trên hệ thống.");
+        }
+      } else {
+        errorMsg = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại đường truyền mạng!';
+      }
+
+      // Hiển thị thông báo lỗi trực quan cho người dùng bằng alert đúng cấu trúc của bạn
+      alert(errorMsg);
+
     } finally {
       setLoading(false);
     }
-  }; // Đã đóng ngoặc hàm handleSubmit chuẩn xác
+  };
 
   return (
     <div className="auth-container">
@@ -119,4 +138,4 @@ export default function Login() {
       </div>
     </div>
   );
-} 
+}

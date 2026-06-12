@@ -6,7 +6,8 @@ import {
   Trash2, 
   Tag, 
   Loader2, 
-  AlertCircle 
+  AlertCircle,
+  SlidersHorizontal
 } from 'lucide-react';
 import { 
   getCategories, 
@@ -19,8 +20,13 @@ const CategoryList = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState(''); // State lưu trữ trạng thái sắp xếp
   const [modalOpen, setModalOpen] = useState(false);
   const [currentCategory, setCurrentCategory] = useState({ id: null, name: '', description: '' });
+
+  // States quản lý phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5; // Số lượng danh mục hiển thị trên mỗi trang
 
   useEffect(() => { loadCategories(); }, []);
 
@@ -28,7 +34,7 @@ const CategoryList = () => {
     setLoading(true);
     try {
       const response = await getCategories();
-      setCategories(response.data.data);
+      setCategories(response.data.data || response.data || []);
     } catch (error) {
       console.error('Load categories error:', error);
     } finally { setLoading(false); }
@@ -60,9 +66,42 @@ const CategoryList = () => {
     }
   };
 
+  // 1. XỬ LÝ LỌC DỮ LIỆU (FILTER) Theo từ khóa tìm kiếm
   const filteredCategories = categories.filter((c) =>
     c.categoryName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // 2. XỬ LÝ SẮP XẾP DỮ LIỆU (SORTING)
+  const sortedCategories = [...filteredCategories].sort((a, b) => {
+    if (sortOrder === 'name_asc') {
+      return a.categoryName.localeCompare(b.categoryName);
+    }
+    if (sortOrder === 'name_desc') {
+      return b.categoryName.localeCompare(a.categoryName);
+    }
+    if (sortOrder === 'id_desc') {
+      return b.categoryID - a.categoryID; // ID lớn hơn lên trước (mới nhất)
+    }
+    if (sortOrder === 'id_asc') {
+      return a.categoryID - b.categoryID; // ID nhỏ hơn lên trước (cũ nhất)
+    }
+    return 0; // Mặc định giữ nguyên theo API trả về
+  });
+
+  // 3. XỬ LÝ PHÂN TRANG (PAGINATION) - Tính toán dữ liệu cắt nhỏ cho trang hiện tại
+  const totalPages = Math.ceil(sortedCategories.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = sortedCategories.slice(indexOfFirstItem, indexOfLastItem);
+
+  const basePageButtonStyle = {
+    padding: "8px 14px",
+    borderRadius: "8px",
+    border: "2px solid #cbd5e1",
+    fontWeight: "700",
+    fontSize: "14px",
+    transition: "all 0.15s ease",
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', WebkitFontSmoothing: 'subpixel-antialiased', MozOsxFontSmoothing: 'auto' }}>
@@ -88,17 +127,42 @@ const CategoryList = () => {
         </button>
       </div>
 
-      {/* Ô tìm kiếm */}
-      <div style={{ position: 'relative', width: '100%', maxWidth: '360px' }}>
-        <Search style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#000000' }} size={18} strokeWidth={2.5} />
-        <input
-          type="text"
-          placeholder="Tìm kiếm danh mục..."
-          className="nav-search-input"
-          style={{ paddingLeft: '40px', background: '#ffffff', border: '2px solid #000000', color: '#000000', fontWeight: '700', fontSize: '14px' }}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      {/* Thanh công cụ: Tìm kiếm và Sắp xếp */}
+      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+        {/* Ô tìm kiếm */}
+        <div style={{ position: 'relative', flex: '1', minWidth: '260px', maxWidth: '360px' }}>
+          <Search style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#000000' }} size={18} strokeWidth={2.5} />
+          <input
+            type="text"
+            placeholder="Tìm kiếm danh mục..."
+            className="nav-search-input"
+            style={{ width: '100%', boxSizing: 'border-box', paddingLeft: '40px', background: '#ffffff', border: '2px solid #000000', color: '#000000', fontWeight: '700', fontSize: '14px', height: '44px' }}
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1); // Reset về trang 1 khi gõ tìm kiếm
+            }}
+          />
+        </div>
+
+        {/* Thanh sắp xếp tiêu chí */}
+        <div style={{ position: 'relative', width: '100%', maxWidth: '240px' }}>
+          <SlidersHorizontal style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#000000' }} size={18} strokeWidth={2.5} />
+          <select
+            value={sortOrder}
+            onChange={(e) => {
+              setSortOrder(e.target.value);
+              setCurrentPage(1); // Reset về trang 1 khi thay đổi bộ sắp xếp
+            }}
+            style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px 10px 42px', background: '#ffffff', border: '2px solid #cbd5e1', borderRadius: '12px', color: '#000000', fontWeight: '700', fontSize: '14px', height: '44px', outline: 'none', cursor: 'pointer' }}
+          >
+            <option value="">Sắp xếp: Mặc định</option>
+            <option value="name_asc">Tên danh mục: A-Z</option>
+            <option value="name_desc">Tên danh mục: Z-A</option>
+            <option value="id_desc">Thời gian: Mới nhất</option>
+            <option value="id_asc">Thời gian: Cũ nhất</option>
+          </select>
+        </div>
       </div>
 
       {/* Bảng Dữ Liệu */}
@@ -108,7 +172,7 @@ const CategoryList = () => {
             <Loader2 className="animate-spin" style={{ color: '#2563eb' }} size={28} />
             Đang đồng bộ dữ liệu...
           </div>
-        ) : filteredCategories.length === 0 ? (
+        ) : currentItems.length === 0 ? (
           <div style={{ padding: '60px', textAlign: 'center', color: '#000000', fontWeight: '900', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
             <AlertCircle style={{ color: '#dc2626' }} size={28} />
             Không tìm thấy danh mục nào phù hợp.
@@ -124,7 +188,8 @@ const CategoryList = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredCategories.map((cat) => (
+              {/* Duyệt qua mảng currentItems thay vì filteredCategories ban đầu */}
+              {currentItems.map((cat) => (
                 <tr key={cat.categoryID} style={{ borderBottom: '1px solid #cbd5e1' }}>
                   <td style={{ padding: '16px', color: '#000000', fontFamily: 'var(--mono)', fontSize: '14px', fontWeight: '800' }}>{cat.categoryID}</td>
                   <td style={{ padding: '16px', fontWeight: '800', color: '#000000' }}>{cat.categoryName}</td>
@@ -157,6 +222,60 @@ const CategoryList = () => {
         )}
       </div>
 
+      {/* THANH PHÂN TRANG (PAGINATION) */}
+      {!loading && totalPages > 1 && (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", padding: "10px 0" }}>
+          {/* Nút Trước */}
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((prev) => prev - 1)}
+            style={{
+              ...basePageButtonStyle,
+              background: currentPage === 1 ? "#f1f5f9" : "#ffffff",
+              color: currentPage === 1 ? "#94a3b8" : "#000000",
+              cursor: currentPage === 1 ? "not-allowed" : "pointer",
+            }}
+          >
+            Trước
+          </button>
+
+          {/* Vòng lặp xuất số trang */}
+          {Array.from({ length: totalPages }, (_, idx) => {
+            const pageNum = idx + 1;
+            const isPageActive = currentPage === pageNum;
+            return (
+              <button
+                key={pageNum}
+                onClick={() => setCurrentPage(pageNum)}
+                style={{
+                  ...basePageButtonStyle,
+                  background: isPageActive ? "#2563eb" : "#ffffff",
+                  color: isPageActive ? "#ffffff" : "#000000",
+                  borderColor: isPageActive ? "#2563eb" : "#cbd5e1",
+                  cursor: "pointer",
+                }}
+              >
+                {pageNum}
+              </button>
+            );
+          })}
+
+          {/* Nút Sau */}
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((prev) => prev + 1)}
+            style={{
+              ...basePageButtonStyle,
+              background: currentPage === totalPages ? "#f1f5f9" : "#ffffff",
+              color: currentPage === totalPages ? "#94a3b8" : "#000000",
+              cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+            }}
+          >
+            Sau
+          </button>
+        </div>
+      )}
+
       {/* Modal Form */}
       {modalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', zIndex: 100 }}>
@@ -178,7 +297,7 @@ const CategoryList = () => {
               </div>
               <div className="form-group">
                 <label style={{ fontWeight: '800', color: '#000000', fontSize: '14px' }}>Mô tả</label>
-               <textarea
+                <textarea
                   rows="3"
                   style={{
                     backgroundColor: '#ffffff',

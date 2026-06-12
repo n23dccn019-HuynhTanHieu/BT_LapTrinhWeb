@@ -50,24 +50,32 @@ namespace backend.Controllers
             };
 
             _context.Users.Add(user);
-
             await _context.SaveChangesAsync();
 
             return Ok(user);
         }
 
-[HttpPost("login")]
+        [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDTO dto)
         {
             var user = await _context.Users
                 .Include(x => x.Role)
                 .FirstOrDefaultAsync(x => x.Username == dto.Username);
 
+            // 1. Kiểm tra tài khoản có tồn tại không
             if (user == null)
             {
-                return Unauthorized();
+                return Unauthorized("Tài khoản hoặc mật khẩu không chính xác.");
             }
 
+            // 🛑 GIA CỐ LOGIC: Kiểm tra trạng thái hoạt động (IsActive)
+            // Nếu tài khoản bị khóa (false), chặn ngay lập tức không cho đi tiếp xuống phần check pass hay tạo JWT
+            if (user.IsActive == false)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Admin tối cao để được hỗ trợ!");
+            }
+
+            // 2. Kiểm tra mật khẩu
             bool checkPassword = BCrypt.Net.BCrypt.Verify(
                 dto.Password,
                 user.PasswordHash
@@ -75,9 +83,10 @@ namespace backend.Controllers
 
             if (!checkPassword)
             {
-                return Unauthorized();
+                return Unauthorized("Tài khoản hoặc mật khẩu không chính xác.");
             }
 
+            // 3. Khởi tạo Claims và JWT Token
             var claims = new[]
             {
                 new Claim(ClaimTypes.Name, user.Username),
@@ -102,21 +111,19 @@ namespace backend.Controllers
                 signingCredentials: creds
             );
 
-            // 🔥 ĐÃ SỬA: Bổ sung thêm dữ liệu Phone và Address lấy trực tiếp từ database trả về cho React
             return Ok(new
             {
                 token = new JwtSecurityTokenHandler().WriteToken(token),
-
                 user = new
                 {
                     userID = user.UserID,
                     username = user.Username,
                     fullName = user.FullName,
                     email = user.Email,
-                    phone = user.Phone,       // 🚀 Đã thêm cột Phone
-                    address = user.Address,   // 🚀 Đã thêm cột Address
+                    phone = user.Phone,       
+                    address = user.Address,   
                     role = user.Role.RoleName,
-                    roleID = user.RoleID      // 🚀 Thêm luôn cái này để file Login.jsx check quyền Admin/Customer cho chuẩn bằng số
+                    roleID = user.RoleID      
                 }
             });
         }

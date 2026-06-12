@@ -241,18 +241,22 @@ namespace backend.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPut("admins/{id}/password")]
-        public async Task<IActionResult> ChangeAdminPassword(
-            int id,
-            ChangePasswordDto dto)
+        public async Task<IActionResult> ChangeAdminPassword(int id, ChangePasswordDto dto)
         {
             var admin = await _context.Users.FindAsync(id);
 
             if (admin == null)
-                return NotFound();
+                return NotFound(new { message = "Không tìm thấy tài khoản quản trị viên" });
 
-            admin.PasswordHash =
-                BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            // KHỞI CHẠY KIỂM TRA MẬT KHẨU CŨ
+            bool isOldPasswordValid = BCrypt.Net.BCrypt.Verify(dto.OldPassword, admin.PasswordHash);
+            if (!isOldPasswordValid)
+            {
+                return BadRequest(new { message = "Mật khẩu hiện tại không chính xác!" });
+            }
 
+            // NẾU ĐÚNG THÌ TIẾN HÀNH CẬP NHẬT
+            admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
             admin.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();

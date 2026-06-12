@@ -2,6 +2,7 @@ using backend.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization; // Cần thiết để tính số tuần
 
 namespace backend.Controllers
 {
@@ -21,15 +22,13 @@ namespace backend.Controllers
         [HttpGet("overview")]
         public async Task<IActionResult> Overview()
         {
-            var totalProducts =
-                await _context.Products.CountAsync();
+            var totalProducts = await _context.Products.CountAsync();
 
             var totalUsers = await _context.Users
                 .Include(x => x.Role)
                 .CountAsync(x => x.Role.RoleName == "Customer");
 
-            var totalOrders =
-                await _context.Orders.CountAsync();
+            var totalOrders = await _context.Orders.CountAsync();
 
             var revenue = await _context.Orders
                 .Where(x => x.OrderStatus == 5)
@@ -58,6 +57,37 @@ namespace backend.Controllers
                 })
                 .OrderBy(x => x.date)
                 .ToListAsync();
+
+            return Ok(data);
+        }
+
+        // THÊM MỚI: REVENUE BY WEEK (Thống kê doanh thu theo tuần)
+        [HttpGet("revenue-by-week")]
+        public async Task<IActionResult> RevenueByWeek()
+        {
+            // Do Entity Framework Core không thể dịch trực tiếp các hàm xử lý tuần phức tạp xuống SQL tùy loại DB,
+            // Giải pháp tối ưu và an toàn nhất là lấy data thô đã filter về RAM (AsEnumerable), sau đó GroupBy trên bộ nhớ.
+            var orders = await _context.Orders
+                .Where(x => x.OrderStatus == 5)
+                .Select(x => new { x.OrderDate, x.TotalAmount })
+                .ToListAsync();
+
+            var data = orders
+                .GroupBy(x => new
+                {
+                    Year = x.OrderDate.Year,
+                    // Sử dụng thư viện chuẩn để xác định số tuần trong năm (ISO 8601)
+                    Week = ISOWeek.GetWeekOfYear(x.OrderDate)
+                })
+                .Select(g => new
+                {
+                    year = g.Key.Year,
+                    week = g.Key.Week,
+                    revenue = g.Sum(x => x.TotalAmount)
+                })
+                .OrderBy(x => x.year)
+                .ThenBy(x => x.week)
+                .ToList();
 
             return Ok(data);
         }

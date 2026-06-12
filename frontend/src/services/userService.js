@@ -34,12 +34,10 @@ const userService = {
       },
     }),
 
-  changeAdminPassword: (id, newPassword, token) =>
+  changeAdminPassword: (id, passwordData, token) =>
     axios.put(
       `${API_URL}/admins/${id}/password`,
-      {
-        newPassword,
-      },
+      passwordData, // Truyền trực tiếp Object này lên Body của Request
       {
         headers: {
           Authorization: `Bearer ${token}`,
