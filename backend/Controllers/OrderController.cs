@@ -79,6 +79,35 @@ namespace backend.Controllers
             });
         }
 
+        //========================================================
+        // CUSTOMER GET ORDER HISTORY (KHÁCH HÀNG XEM LỊCH SỬ MUA)
+        // ========================================================
+        [Authorize]
+        [HttpGet("customer-history")]
+        public async Task<IActionResult> GetCustomerHistory()
+        {
+            // Quét claim tìm User ID tương tự UserController
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                            ?? User.FindFirst("id")?.Value
+                            ?? User.FindFirst("Id")?.Value
+                            ?? User.FindFirst("UserID")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized(new { message = "Không xác định được danh tính từ Token." });
+
+            int userId = int.Parse(userIdClaim);
+
+            // Lấy toàn bộ đơn hàng của khách hàng này, kèm theo danh sách sản phẩm chi tiết
+            var orders = await _context.Orders
+                .Include(x => x.OrderDetails)
+                .ThenInclude(x => x.Product)
+                .Where(x => x.UserID == userId)
+                .OrderByDescending(x => x.OrderID) // Đơn hàng mới nhất lên đầu
+                .ToListAsync();
+
+            return Ok(orders);
+        }
+
         // ADMIN GET ALL ORDERS
         [Authorize(Roles = "Admin")]
         [HttpGet]

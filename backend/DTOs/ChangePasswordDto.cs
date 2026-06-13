@@ -1,4 +1,4 @@
-namespace backend.DTOs.Admin
+namespace backend.DTOs
 {
     public class ChangePasswordDto
     {

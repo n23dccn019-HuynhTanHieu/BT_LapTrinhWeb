@@ -17,6 +17,10 @@ import {
   FiShield,
 } from 'react-icons/fi';
 
+// IMPORT MODAL CẬP NHẬT HỒ SƠ VÀ ĐỔI MẬT KHẨU
+import UpdateProfileModal from './UpdateProfileModal';
+import ChangePasswordModal from "./ChangePasswordModal";
+
 const adminMenuItems = [
   { label: 'Thống kê doanh thu', icon: <FiPieChart />, path: '/admin' },
   { label: 'Quản lý danh mục', icon: <FiFolder />, path: '/admin/categories' },
@@ -29,25 +33,32 @@ const adminMenuItems = [
 export const AdminLayout = ({ children }) => {
   const navigate = useNavigate();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  
+  // STATE ĐỂ QUẢN LÝ ĐÓNG/MỞ MODAL
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+  
   const userMenuRef = useRef(null);
 
+  // LẤY TOKEN CHUẨN ĐỂ TRUYỀN VÀO MODAL
+  const token = localStorage.getItem('token');
+
+  // Lấy đối tượng user từ localStorage
   const currentUser = useMemo(() => {
     const rawUser = localStorage.getItem('currentUser') || localStorage.getItem('user');
     if (!rawUser) {
       return { fullName: 'Admin King', username: 'admin' };
     }
     try {
-      const user = JSON.parse(rawUser);
-      return {
-        fullName: user.fullName || user.name || 'Admin King',
-        username: user.username || user.email || 'admin',
-      };
+      return JSON.parse(rawUser);
     } catch {
       return { fullName: 'Admin King', username: 'admin' };
     }
   }, []);
 
+  // Xử lý chuỗi tên hiển thị dạng chữ cái đầu trên Avatar tròn
   const getAvatarText = (fullName) => {
+    if (!fullName) return 'AD';
     const words = fullName.trim().split(/\s+/);
     if (words.length >= 2) {
       return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
@@ -136,11 +147,11 @@ export const AdminLayout = ({ children }) => {
             <div className="admin-user-profile" ref={userMenuRef}>
               <button type="button" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} className="admin-avatar-btn">
                 <div className="admin-user-info">
-                  <p className="user-name-txt">{currentUser.fullName}</p>
-                  <p className="user-role-txt">{currentUser.username}</p>
+                  <p className="user-name-txt">{currentUser?.fullName || 'Admin King'}</p>
+                  <p className="user-role-txt">{currentUser?.username || 'admin'}</p>
                 </div>
                 <div className="user-avatar-circle">
-                  {getAvatarText(currentUser.fullName)}
+                  {getAvatarText(currentUser?.fullName || 'Admin King')}
                 </div>
                 <span className={`arrow-down-icon ${isUserMenuOpen ? 'arrow-rotate' : ''}`}>▼</span>
               </button>
@@ -152,14 +163,14 @@ export const AdminLayout = ({ children }) => {
                     <div className="dropdown-info-row">
                       <FiUserCheck />
                       <p>
-                        Họ tên: <b>{currentUser.fullName}</b>
+                        Họ tên: <b>{currentUser?.fullName || 'Admin King'}</b>
                       </p>
                     </div>
 
                     <div className="dropdown-info-row">
                       <FiCreditCard />
                       <p>
-                        Tài khoản: <b>{currentUser.username}</b>
+                        Tài khoản: <b>{currentUser?.username || 'admin'}</b>
                       </p>
                     </div>
 
@@ -179,21 +190,29 @@ export const AdminLayout = ({ children }) => {
 
                     <div className="dropdown-divider-line" />
 
+                    {/* NÚT THÔNG TIN CÁ NHÂN -> KÍCH HOẠT MỞ MODAL */}
                     <button
                       type="button"
-                      onClick={() => alert('Đang phát triển...')}
+                      onClick={() => {
+                        setIsProfileOpen(true);
+                        setIsUserMenuOpen(false);
+                      }}
                       className="dropdown-action-btn"
                     >
                       <FiUser />
                       <span>Thông tin cá nhân</span>
                     </button>
 
+                    {/* NÚT ĐỔI MẬT KHẨU -> KÍCH HOẠT MỞ MODAL */}
                     <button
                       type="button"
-                      onClick={() => alert('Đang phát triển...')}
+                      onClick={() => {
+                        setIsPasswordOpen(true); 
+                        setIsUserMenuOpen(false);
+                      }}
                       className="dropdown-action-btn"
                     >
-                      <FiLock />
+                      <FiLock /> 
                       <span>Đổi mật khẩu</span>
                     </button>
 
@@ -218,6 +237,20 @@ export const AdminLayout = ({ children }) => {
         {/* TRANG CON CHẠY Ở ĐÂY */}
         <main className="admin-page-body">{children}</main>
       </div>
+
+      {/* COMPONENT MODAL XỬ LÝ ĐÓNG/MỞ */}
+      <UpdateProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        currentUser={currentUser}
+        token={token}
+      />
+
+      <ChangePasswordModal
+        isOpen={isPasswordOpen}
+        onClose={() => setIsPasswordOpen(false)}
+        token={token}
+      />
 
     </div>
   );

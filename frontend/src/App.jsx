@@ -18,6 +18,7 @@ import ProductListCustomer from './pages/customer/ProductList';
 import ProductDetail from './pages/customer/ProductDetail';
 import Cart from './pages/customer/Cart';
 import Checkout from './pages/customer/Checkout';
+import OrderHistory from './pages/customer/OrderHistory';
 
 // Admin
 import Dashboard from './pages/admin/dashboard/Dashboard';
@@ -232,6 +233,22 @@ function App() {
             />
 
             <Checkout />
+          </>
+        }
+      />
+
+      <Route
+        path="/order-history"
+        element={
+          <>
+            <Navbar searchTerm={searchTerm} 
+            setSearchTerm={setSearchTerm} 
+            selectedCategory={selectedCategory} 
+            setSelectedCategory={
+              setSelectedCategory
+              } 
+            />
+            <OrderHistory />
           </>
         }
       />
