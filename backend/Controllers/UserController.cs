@@ -193,7 +193,7 @@ namespace backend.Controllers
         {
             var admins = await _context.Users
                 .Include(x => x.Role)
-                .Where(x => x.Role.RoleName == "Admin")
+                .Where(x => x.Role.RoleName == "Admin") // Chỉ lấy duy nhất quyền Admin
                 .Select(x => new
                 {
                     x.UserID,
@@ -203,11 +203,12 @@ namespace backend.Controllers
                     x.Phone,
                     x.Address,
                     x.IsActive,
-                    x.CreatedAt
+                    x.CreatedAt,
+                    Role = x.Role.RoleName // Đảm bảo trả ra chữ "Admin" cho Frontend đọc
                 })
                 .ToListAsync();
 
-            return Ok(admins);
+            return Ok(new { data = admins });
         }
 
         [Authorize(Roles = "Admin")]

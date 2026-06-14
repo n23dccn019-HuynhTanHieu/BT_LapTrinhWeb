@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import userService from "../services/userService";
+import { User, X } from "lucide-react"; // Đồng bộ icon giống AdminList
 
 export default function UpdateProfileModal({ isOpen, onClose, currentUser, token }) {
   const [profileData, setProfileData] = useState({ fullName: "", email: "", phone: "", address: "" });
@@ -68,32 +69,207 @@ export default function UpdateProfileModal({ isOpen, onClose, currentUser, token
   if (!isOpen) return null;
 
   return (
-    <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0, 0, 0, 0.55)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 99999, backdropFilter: "blur(5px)" }}>
-      <div style={{ backgroundColor: "#ffffff", padding: "25px", borderRadius: "14px", width: "420px", boxShadow: "0 20px 40px rgba(0,0,0,0.25)", position: "relative", fontFamily: '"Segoe UI", sans-serif', color: "#2d3748" }}>
-        <button type="button" onClick={onClose} style={{ position: "absolute", top: "15px", right: "18px", background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#a0aec0" }}>✕</button>
-        <h3 style={{ margin: "0 0 20px 0", color: "#2b6cb0", fontSize: "18px", fontWeight: "700", borderBottom: "2px solid #edf2f7", paddingBottom: "10px" }}>👤 Hồ sơ cá nhân</h3>
+    <div 
+      style={{ 
+        position: "fixed", 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        backgroundColor: "rgba(15, 23, 42, 0.4)", // Overlay mờ của AdminList
+        display: "flex", 
+        justifyContent: "center", 
+        alignItems: "center", 
+        zIndex: 99999, 
+        backdropFilter: "blur(4px)" 
+      }}
+    >
+      <div 
+        style={{ 
+          backgroundColor: "#ffffff", 
+          padding: "28px", 
+          borderRadius: "16px", // Bo góc 16px đồng bộ
+          width: "440px", // Độ rộng đồng bộ đổi mật khẩu
+          boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)", 
+          position: "relative", 
+          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", // Font chữ hệ thống chuyên nghiệp
+          border: "2px solid #cbd5e1", // Khung viền xám đậm giống bài mẫu
+          color: "#0f172a"
+        }}
+      >
+        {/* Nút Đóng Nhanh (Góc phải) */}
+        <button 
+          type="button" 
+          onClick={onClose} 
+          style={{ 
+            position: "absolute", 
+            top: "20px", 
+            right: "20px", 
+            background: "none", 
+            border: "none", 
+            cursor: "pointer", 
+            color: "#64748b",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <X size={20} />
+        </button>
+
+        {/* Tiêu đề Modal - Tone xanh nước biển */}
+        <h3 
+          style={{ 
+            margin: "0 0 24px 0", 
+            fontSize: "18px", 
+            fontWeight: "700", 
+            color: "#0f172a",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px"
+          }}
+        >
+          <User style={{ color: "#2563eb" }} size={22} strokeWidth={2.5} /> 
+          Hồ Sơ Cá Nhân
+        </h3>
         
-        <form onSubmit={handleUpdateProfile} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          <div>
-            <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#4a5568", marginBottom: "4px" }}>Họ và tên</label>
-            <input type="text" required style={{ width: "100%", padding: "8px 12px", border: "1px solid #cbd5e0", borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }} value={profileData.fullName} onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })} />
+        {/* Form Nhập Dữ Liệu */}
+        <form onSubmit={handleUpdateProfile} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          
+          {/* Họ và tên */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <label style={{ fontSize: "14px", fontWeight: "600", color: "#334155" }}>
+              Họ và tên *
+            </label>
+            <input 
+              type="text" 
+              required 
+              style={{ 
+                width: "100%", 
+                padding: "10px 14px", 
+                backgroundColor: "#ffffff", // Ô điền màu trắng tinh
+                border: "2px solid #cbd5e1", 
+                borderRadius: "10px", // Bo góc ô nhập 10px giống AdminList
+                fontSize: "14px", 
+                boxSizing: "border-box",
+                outline: "none",
+                fontFamily: "inherit",
+                color: "#0f172a"
+              }} 
+              value={profileData.fullName} 
+              onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })} 
+            />
           </div>
-          <div>
-            <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#4a5568", marginBottom: "4px" }}>Email liên hệ</label>
-            <input type="email" required style={{ width: "100%", padding: "8px 12px", border: "1px solid #cbd5e0", borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }} value={profileData.email} onChange={(e) => setProfileData({ ...profileData, email: e.target.value })} />
+
+          {/* Email */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <label style={{ fontSize: "14px", fontWeight: "600", color: "#334155" }}>
+              Email liên hệ *
+            </label>
+            <input 
+              type="email" 
+              required 
+              style={{ 
+                width: "100%", 
+                padding: "10px 14px", 
+                backgroundColor: "#ffffff", 
+                border: "2px solid #cbd5e1", 
+                borderRadius: "10px", 
+                fontSize: "14px", 
+                boxSizing: "border-box",
+                outline: "none",
+                fontFamily: "inherit",
+                color: "#0f172a"
+              }} 
+              value={profileData.email} 
+              onChange={(e) => setProfileData({ ...profileData, email: e.target.value })} 
+            />
           </div>
-          <div>
-            <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#4a5568", marginBottom: "4px" }}>Số điện thoại</label>
-            <input type="text" style={{ width: "100%", padding: "8px 12px", border: "1px solid #cbd5e0", borderRadius: "6px", fontSize: "14px", boxSizing: "border-box" }} value={profileData.phone} onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })} />
+
+          {/* Số điện thoại */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <label style={{ fontSize: "14px", fontWeight: "600", color: "#334155" }}>
+              Số điện thoại
+            </label>
+            <input 
+              type="text" 
+              style={{ 
+                width: "100%", 
+                padding: "10px 14px", 
+                backgroundColor: "#ffffff", 
+                border: "2px solid #cbd5e1", 
+                borderRadius: "10px", 
+                fontSize: "14px", 
+                boxSizing: "border-box",
+                outline: "none",
+                fontFamily: "inherit",
+                color: "#0f172a"
+              }} 
+              value={profileData.phone} 
+              onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })} 
+            />
           </div>
-          <div>
-            <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#4a5568", marginBottom: "4px" }}>Địa chỉ giao hàng</label>
-            <textarea rows="2" style={{ width: "100%", padding: "8px 12px", border: "1px solid #cbd5e0", borderRadius: "6px", fontSize: "14px", resize: "none", boxSizing: "border-box" }} value={profileData.address} onChange={(e) => setProfileData({ ...profileData, address: e.target.value })} />
+
+          {/* Địa chỉ giao hàng */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <label style={{ fontSize: "14px", fontWeight: "600", color: "#334155" }}>
+              Địa chỉ giao hàng
+            </label>
+            <textarea 
+              rows="2" 
+              style={{ 
+                width: "100%", 
+                padding: "10px 14px", 
+                backgroundColor: "#ffffff", 
+                border: "2px solid #cbd5e1", 
+                borderRadius: "10px", 
+                fontSize: "14px", 
+                boxSizing: "border-box",
+                outline: "none",
+                fontFamily: "inherit",
+                color: "#0f172a",
+                resize: "none"
+              }} 
+              value={profileData.address} 
+              onChange={(e) => setProfileData({ ...profileData, address: e.target.value })} 
+            />
           </div>
           
-          <div style={{ display: "flex", justifyContent: "end", gap: "10px", marginTop: "10px" }}>
-            <button type="button" onClick={onClose} style={{ padding: "8px 16px", backgroundColor: "#e2e8f0", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}>Hủy</button>
-            <button type="submit" style={{ padding: "8px 16px", backgroundColor: "#2b6cb0", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}>Lưu thay đổi</button>
+          {/* Nhóm nút bấm thao tác */}
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "12px" }}>
+            <button 
+              type="button" 
+              onClick={onClose} 
+              style={{ 
+                padding: "10px 16px", 
+                backgroundColor: "#f1f5f9", 
+                border: "none", 
+                borderRadius: "10px", 
+                cursor: "pointer", 
+                fontSize: "14px", 
+                fontWeight: "600",
+                color: "#475569",
+                fontFamily: "inherit"
+              }}
+            >
+              Hủy
+            </button>
+            <button 
+              type="submit" 
+              style={{ 
+                padding: "10px 20px", 
+                backgroundColor: "#2563eb", // Xanh nước biển (Blue) đồng bộ với nút Lưu Lại / Tìm Kiếm của AdminList
+                color: "#ffffff", 
+                border: "none", 
+                borderRadius: "10px", 
+                cursor: "pointer", 
+                fontSize: "14px", 
+                fontWeight: "600",
+                fontFamily: "inherit"
+              }}
+            >
+              Lưu thay đổi
+            </button>
           </div>
         </form>
       </div>
