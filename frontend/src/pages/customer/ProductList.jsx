@@ -8,18 +8,15 @@ export default function ProductList({ searchTerm, selectedCategory }) {
   const [totalItems, setTotalItems] = useState(0); 
 
   const [maxPrice, setMaxPrice] = useState(999999999);
-  // Đã sửa: Đổi mặc định thành "name_asc" để khớp switch-case Backend
   const [sortBy, setSortBy] = useState("name_asc"); 
   const [currentPage, setCurrentPage] = useState(1);
 
-  const ITEMS_PER_PAGE = 4; // Cấu hình hiển thị 4 sản phẩm 1 trang ở Frontend
+  const ITEMS_PER_PAGE = 4; 
 
-  // Theo dõi tất cả thay đổi từ các nút bấm bộ lọc để gọi lại API
   useEffect(() => {
     fetchProducts();
   }, [currentPage, selectedCategory, searchTerm, maxPrice, sortBy]);
 
-  // Reset về trang 1 khi người dùng đổi danh mục, tìm kiếm hoặc giá tiền
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedCategory, searchTerm, maxPrice]);
@@ -27,26 +24,23 @@ export default function ProductList({ searchTerm, selectedCategory }) {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      // Ép kiểu an toàn: Chuyển category về dạng số nguyên (int) nếu hợp lệ
       let parsedCategoryId = null;
       if (selectedCategory && selectedCategory !== "all") {
         parsedCategoryId = parseInt(selectedCategory, 10);
       }
 
-      // 🚀 ĐỒNG BỘ HOÀN TOÀN THAM SỐ GỬI LÊN BACKEND CONTROLLER
       const params = {
         keyword: searchTerm && searchTerm.trim() !== "" ? searchTerm : null,
-        categoryId: isNaN(parsedCategoryId) ? null : parsedCategoryId, // Gửi int? hoặc null
-        minPrice: null, // Có thể bổ sung nếu ông làm slider sau này
+        categoryId: isNaN(parsedCategoryId) ? null : parsedCategoryId, 
+        minPrice: null, 
         maxPrice: maxPrice !== 999999999 ? maxPrice : null,
-        sortBy: sortBy, // "price_asc" | "price_desc" | "name_asc" | "name_desc"
+        sortBy: sortBy, 
         page: currentPage,
-        pageSize: ITEMS_PER_PAGE // Gửi 4 để Backend cắt Skip/Take đúng 4 sản phẩm
+        pageSize: ITEMS_PER_PAGE 
       };
 
       const response = await productService.getAll(params);
 
-      // Map đúng cấu trúc đối tượng Anonymous Object trả về từ ASP.NET
       setProducts(response.data.data || []);
       setTotalItems(response.data.totalItems || 0);
     } catch (error) {
@@ -56,35 +50,6 @@ export default function ProductList({ searchTerm, selectedCategory }) {
     }
   };
 
-  const addToCart = (product) => {
-    const rawCart = localStorage.getItem("cartItems") || "[]";
-    let cartItems = JSON.parse(rawCart);
-
-    const existingItem = cartItems.find((item) => item.id === product.productID);
-    const finalPrice = product.promoPrice || product.price;
-
-    if (existingItem) {
-      if (existingItem.quantity >= 10) {
-        alert(`Sản phẩm "${product.productName}" đã đạt số lượng mua tối đa (10 cái)!`);
-        return;
-      }
-      existingItem.quantity += 1;
-    } else {
-      cartItems.push({
-        id: product.productID,
-        name: product.productName,
-        price: finalPrice,
-        image: product.thumbnail && product.thumbnail.trim() !== "" ? product.thumbnail : null,
-        quantity: 1,
-      });
-    }
-
-    localStorage.setItem("cartItems", JSON.stringify(cartItems));
-    window.dispatchEvent(new Event("cart_updated"));
-    alert(`Đã thêm "${product.productName}" vào giỏ hàng!`);
-  };
-
-  // Tính tổng số trang thật dựa trên tổng số sản phẩm trong Database
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
 
   if (loading && products.length === 0) {
@@ -120,7 +85,6 @@ export default function ProductList({ searchTerm, selectedCategory }) {
           <div className="products-header">
             <h2>Danh sách sản phẩm (Tổng số: {totalItems})</h2>
             
-            {/* ĐÃ ĐỔI: Khớp trị value của option theo switch-case Backend */}
             <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="sort-select">
               <option value="name_asc">Tên: A - Z</option>
               <option value="price_asc">Giá: Thấp đến Cao</option>
@@ -134,44 +98,76 @@ export default function ProductList({ searchTerm, selectedCategory }) {
                 ❌ Không tìm thấy sản phẩm nào phù hợp với bộ lọc hiện tại!
               </div>
             ) : (
-              products.map((product) => (
-                <div key={product.productID} className="product-card">
-                  <div style={{ height: "200px", overflow: "hidden", backgroundColor: "#f7fafc", borderRadius: "8px 8px 0 0", position: "relative" }}>
-                    {product.promoPrice && (
-                      <div style={{ position: "absolute", top: "10px", left: "10px", backgroundColor: "#ef4444", color: "#fff", padding: "5px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: "700", zIndex: 10 }}>
-                        -{Math.round(((product.price - product.promoPrice) / product.price) * 100)}%
+              // 🌟 VỊ TRÍ GẮN: Thay đổi toàn bộ cấu trúc map ở đây
+              products.map((product) => {
+                const isOutOfStock = product.stockQuantity === 0;
+
+                // 1. Style chung cho cả 2 loại Card
+                const cardStyles = {
+                  position: "relative",
+                  opacity: isOutOfStock ? 0.75 : 1, // Hết hàng thì làm mờ đi một chút
+                  textDecoration: "none",
+                  color: "inherit",
+                  display: "flex",
+                  flexDirection: "column",
+                  cursor: isOutOfStock ? "not-allowed" : "pointer", // Đổi con trỏ chuột thành dấu cấm nếu hết hàng
+                  background: "#fff",
+                  borderRadius: "12px",
+                  overflow: "hidden",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
+                };
+
+                // 2. Giao diện hiển thị chung bên trong Card
+                const cardContent = (
+                  <>
+                    <div style={{ height: "260px", overflow: "hidden", backgroundColor: "#f7fafc", position: "relative", display: "flex", justifyContent: "center", alignItems: "center", padding: "10px" }}>
+                      {product.promoPrice && !isOutOfStock && (
+                        <div style={{ position: "absolute", top: "10px", left: "10px", backgroundColor: "#ef4444", color: "#fff", padding: "5px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: "700", zIndex: 10 }}>
+                          -{Math.round(((product.price - product.promoPrice) / product.price) * 100)}%
+                        </div>
+                      )}
+                      {isOutOfStock && (
+                        <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0, 0, 0, 0.4)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 11 }}>
+                          <span style={{ backgroundColor: "#334155", color: "#fff", padding: "6px 14px", borderRadius: "4px", fontSize: "14px", fontWeight: "700", textTransform: "uppercase" }}>
+                            Tạm hết hàng
+                          </span>
+                        </div>
+                      )}
+                      <img
+                        src={product.thumbnail && product.thumbnail.trim() !== "" ? product.thumbnail : null}
+                        alt={product.productName}
+                        className="product-card-img"
+                        style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                        onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=400"; }}
+                      />
+                    </div>
+                    <div style={{ padding: "0 14px", textAlign: "center" }}>
+                      <h4 className="product-card-title" style={{ margin: "14px 0 8px 0", fontSize: "16px", fontWeight: "600" }}>{product.productName}</h4>
+                      <div className="product-card-price" style={{ paddingBottom: "18px" }}>
+                        {product.promoPrice ? (
+                          <>
+                            <span className="price-old" style={{ marginRight: "8px" }}>{product.price.toLocaleString()}đ</span>
+                            <span className="price-new">{product.promoPrice.toLocaleString()}đ</span>
+                          </>
+                        ) : (
+                          <span className="price-normal">{product.price.toLocaleString()}đ</span>
+                        )}
                       </div>
-                    )}
-                    <img
-                      src={product.thumbnail && product.thumbnail.trim() !== "" ? product.thumbnail : null}
-                      alt={product.productName}
-                      className="product-card-img"
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=400";
-                      }}
-                    />
+                    </div>
+                  </>
+                );
+
+                // 3. Khóa/Mở đường dẫn dựa trên trạng thái kho hàng
+                return isOutOfStock ? (
+                  <div key={product.productID} className="product-card" style={cardStyles}>
+                    {cardContent}
                   </div>
-                  <h4 className="product-card-title">{product.productName}</h4>
-                  
-                  <div className="product-card-price">
-                    {product.promoPrice ? (
-                      <>
-                        <span className="price-old">{product.price.toLocaleString()}đ</span>
-                        <span className="price-new">{product.promoPrice.toLocaleString()}đ</span>
-                      </>
-                    ) : (
-                      <span className="price-normal">{product.price.toLocaleString()}đ</span>
-                    )}
-                  </div>
-                  
-                  <div className="product-card-actions">
-                    <Link to={`/product/${product.productID}`} className="btn-view-detail">Chi tiết</Link>
-                    <button className="btn-add-cart-fast" onClick={() => addToCart(product)}>+ Giỏ hàng</button>
-                  </div>
-                </div>
-              ))
+                ) : (
+                  <Link to={`/product/${product.productID}`} key={product.productID} className="product-card" style={cardStyles}>
+                    {cardContent}
+                  </Link>
+                );
+              })
             )}
           </div>
 
@@ -184,7 +180,7 @@ export default function ProductList({ searchTerm, selectedCategory }) {
                   {index + 1}
                 </button>
               ))}
-              <button disabled={currentPage === totalPages} onClick={() => setCurrentPage((prev) => prev + 1)}>Sau</button>
+              <button disabled={currentPage === totalPages} onClick={() => setCurrentPage((prev) => prev - 1)}>Sau</button>
             </div>
           )}
         </div>
