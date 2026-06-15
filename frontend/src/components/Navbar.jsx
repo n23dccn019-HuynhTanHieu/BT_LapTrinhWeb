@@ -124,7 +124,7 @@ export default function Navbar({
           <Link to="/" className="menu-link">Trang chủ</Link>
           <button type="button" onClick={() => setIsInfoModalOpen(true)} className="menu-link" style={{ background: "none", border: "none", cursor: "pointer" }}>Giới thiệu</button>
           <button type="button" onClick={() => setIsContactModalOpen(true)} className="menu-link" style={{ background: "none", border: "none", cursor: "pointer" }}>Liên hệ</button>
-          <Link to="/cart" className="menu-link cart-link">Giỏ hàng <span className="cart-badge">{cartCount}</span></Link>
+          <Link to="/cart" className="menu-link cart-link">Giỏ hàng {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}</Link>
 
           {/* CHƯA LOGIN */}
           {!currentUser && (

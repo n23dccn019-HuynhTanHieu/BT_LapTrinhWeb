@@ -118,17 +118,15 @@ namespace backend.Controllers
         // PUT: api/product/5
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(
-            int id,
-            Product model
-        )
+        public async Task<IActionResult> Update(int id, Product model)
         {
-            var product = await _context.Products
-                .FindAsync(id);
+            var product = await _context.Products.FindAsync(id);
+            if (product == null) return NotFound();
 
-            if (product == null)
+            // Kiểm tra số lượng tồn kho không được âm
+            if (model.StockQuantity < 0)
             {
-                return NotFound();
+                return BadRequest("Số lượng tồn kho không được là số âm.");
             }
 
             product.ProductName = model.ProductName;
@@ -136,16 +134,14 @@ namespace backend.Controllers
             product.PromoPrice = model.PromoPrice;
             product.Thumbnail = model.Thumbnail;
             product.Description = model.Description;
-            product.StockQuantity = model.StockQuantity;
+            product.StockQuantity = model.StockQuantity; // Cập nhật kho
             product.CategoryID = model.CategoryID;
             product.IsActive = model.IsActive;
             product.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
-
             return Ok(product);
         }
-
         // DELETE: api/product/5
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]

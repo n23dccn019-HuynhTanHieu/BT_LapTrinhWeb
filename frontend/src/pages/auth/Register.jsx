@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import api from "../../services/api";
 
 export default function Register() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    fullName: '',
-    username: '',
-    email: '',
-    phone: '',
-    address: '',
-    password: '',
-    confirmPassword: '',
+    fullName: "",
+    username: "",
+    email: "",
+    phone: "",
+    address: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -33,66 +33,70 @@ export default function Register() {
       !formData.email ||
       !formData.password
     ) {
-      alert('Vui lòng nhập đầy đủ thông tin');
+      alert("Vui lòng nhập đầy đủ thông tin");
       return;
     }
 
-    if (
-      formData.password !==
-      formData.confirmPassword
-    ) {
-      alert('Mật khẩu không khớp');
+    if (formData.password !== formData.confirmPassword) {
+      alert("Mật khẩu không khớp");
       return;
     }
 
     try {
+      // Ép đổi username và email thành chữ thường trước khi gửi để đồng bộ DB
+      const cleanUsername = formData.username.trim().toLowerCase();
+      const cleanEmail = formData.email.trim().toLowerCase();
+
+      // Ép dữ liệu trống thành chuỗi rỗng để đồng bộ theo logic mới của Hiếu
+      const cleanPhone = formData.phone ? formData.phone.trim() : "";
+      const cleanAddress = formData.address ? formData.address.trim() : "";
+
       setLoading(true);
 
-      await api.post('/auth/register', {
-        fullName: formData.fullName,
-        username: formData.username,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
+      await api.post("/auth/register", {
+        fullName: formData.fullName.trim(),
+        username: cleanUsername,
+        email: cleanEmail,
+        phone: cleanPhone,
+        address: cleanAddress,
         password: formData.password,
       });
 
-      alert('Đăng ký thành công');
-
-      navigate('/login');
-
+      alert("Đăng ký thành công 🎉");
+      navigate("/login");
     } catch (error) {
       console.error(error);
-
-      alert(
-        error.response?.data?.message ||
-        'Đăng ký thất bại'
-      );
+      alert(error.response?.data?.message || "Đăng ký thất bại");
     } finally {
+      document.activeElement?.blur(); // Tự động nhả focus sau khi submit xong
       setLoading(false);
     }
   };
 
   return (
     <div className="auth-container">
+      {/* 🌟 THẦN CHÚ CSS: ÉP CHỮ GÕ ĐEN ĐẬM, CHỮ GỢI Ý MỜ NHẠT RÕ RỆT */}
+      <style>{`
+        .auth-input {
+          color: #0f172a !important; /* Màu đen đậm cho chữ gõ thật */
+          font-weight: 600 !important; /* Cho chữ dày dặn, dễ nhìn */
+          background-color: #ffffff !important;
+        }
+        .auth-input::placeholder {
+          color: #94a3b8 !important; /* Màu xám tro nhạt hẳn cho chữ gợi ý mờ tự hiện */
+          font-weight: 400 !important;
+          opacity: 0.8 !important;
+        }
+      `}</style>
+
       <div className="auth-card">
+        <h2 className="auth-title">Tạo tài khoản</h2>
 
-        <h2 className="auth-title">
-          Tạo tài khoản
-        </h2>
+        <p className="auth-subtitle">Đăng ký thành viên mới</p>
 
-        <p className="auth-subtitle">
-          Đăng ký thành viên mới
-        </p>
-
-        <form
-          className="auth-form"
-          onSubmit={handleSubmit}
-        >
-
+        <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Họ và tên</label>
-
             <input
               type="text"
               name="fullName"
@@ -105,7 +109,6 @@ export default function Register() {
 
           <div className="form-group">
             <label>Username</label>
-
             <input
               type="text"
               name="username"
@@ -118,7 +121,6 @@ export default function Register() {
 
           <div className="form-group">
             <label>Email</label>
-
             <input
               type="email"
               name="email"
@@ -131,7 +133,6 @@ export default function Register() {
 
           <div className="form-group">
             <label>Số điện thoại</label>
-
             <input
               type="text"
               name="phone"
@@ -144,7 +145,6 @@ export default function Register() {
 
           <div className="form-group">
             <label>Địa chỉ</label>
-
             <input
               type="text"
               name="address"
@@ -157,7 +157,6 @@ export default function Register() {
 
           <div className="form-group">
             <label>Mật khẩu</label>
-
             <input
               type="password"
               name="password"
@@ -170,7 +169,6 @@ export default function Register() {
 
           <div className="form-group">
             <label>Xác nhận mật khẩu</label>
-
             <input
               type="password"
               name="confirmPassword"
@@ -181,22 +179,14 @@ export default function Register() {
             />
           </div>
 
-          <button
-            type="submit"
-            className="btn-auth-submit"
-            disabled={loading}
-          >
-            {loading ? 'Đang xử lý...' : 'Đăng ký'}
+          <button type="submit" className="btn-auth-submit" disabled={loading}>
+            {loading ? "Đang xử lý..." : "Đăng ký"}
           </button>
         </form>
 
         <p className="auth-footer">
           Đã có tài khoản?
-
-          <Link
-            to="/login"
-            className="auth-link"
-          >
+          <Link to="/login" className="auth-link">
             Đăng nhập
           </Link>
         </p>

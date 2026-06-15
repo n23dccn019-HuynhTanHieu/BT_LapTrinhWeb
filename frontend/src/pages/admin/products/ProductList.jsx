@@ -565,17 +565,33 @@ const ProductList = () => {
                     ? `${Number(item.promoPrice).toLocaleString("vi-VN")} đ`
                     : "—"}
                 </td>
-
-                <td
-                  style={{
-                    padding: "16px",
-                    textAlign: "center",
-                    fontWeight: "600",
-                    color: item.stockQuantity > 5 ? "#0f172a" : "#d97706",
-                  }}
-                >
-                  {item.stockQuantity}
-                </td>
+                  <td style={{ padding: "16px", textAlign: "center" }}>
+                    {item.stockQuantity === 0 ? (
+                      <span
+                        style={{
+                          background: "#fee2e2", // Nền đỏ nhạt
+                          color: "#dc2626",      // Chữ đỏ đậm
+                          padding: "4px 8px",
+                          borderRadius: "6px",
+                          fontSize: "12px",
+                          fontWeight: "700",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Hết hàng
+                      </span>
+                    ) : (
+                      <span
+                        style={{
+                          fontWeight: "600",
+                          // Giữ logic cũ: < 5 thì hiện màu cam cảnh báo
+                          color: item.stockQuantity > 5 ? "#0f172a" : "#d97706",
+                        }}
+                      >
+                        {item.stockQuantity}
+                      </span>
+                    )}
+                  </td>
 
                 <td style={{ padding: "16px", textAlign: "right" }}>
                   <div

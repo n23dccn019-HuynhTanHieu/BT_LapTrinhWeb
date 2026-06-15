@@ -7,12 +7,14 @@ const api = axios.create({
   },
 });
 
-// Tự động gắn token
+// Tự động gắn token vào request
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
 
     if (token) {
+      // Cách viết an toàn, tránh ghi đè các cấu hình header khác của axios
+      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
 

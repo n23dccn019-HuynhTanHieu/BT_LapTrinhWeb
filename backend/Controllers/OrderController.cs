@@ -18,75 +18,110 @@ namespace backend.Controllers
             _context = context;
         }
 
-        // CUSTOMER CREATE ORDER
+        // CUSTOMER CREATE ORDER (MUA HÀNG)
         [HttpPost]
         public async Task<IActionResult> Create(CreateOrderDTO dto)
         {
-            decimal totalAmount = 0;
-
-            var order = new Order
+            // Kiểm tra tính hợp lệ của UserID trước khi thực hiện lưu DB
+            if (dto.UserID == null || dto.UserID <= 0)
             {
-                UserID = dto.UserID,
-                ReceiverName = dto.ReceiverName,
-                ReceiverPhone = dto.ReceiverPhone,
-                ReceiverAddress = dto.ReceiverAddress,
-                Note = dto.Note,
-                OrderStatus = 1,
-                OrderDate = DateTime.Now
-            };
-
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
-
-            foreach (var item in dto.Items)
-            {
-                var product = await _context.Products.FindAsync(item.ProductID);
-
-                if (product == null)
-                {
-                    return BadRequest("Product not found");
-                }
-
-                if (product.StockQuantity < item.Quantity)
-                {
-                    return BadRequest($"{product.ProductName} out of stock");
-                }
-
-                decimal price = product.PromoPrice ?? product.Price;
-                totalAmount += price * item.Quantity;
-
-                var orderDetail = new OrderDetail
-                {
-                    OrderID = order.OrderID,
-                    ProductID = item.ProductID,
-                    Quantity = item.Quantity,
-                    Price = price
-                };
-
-                _context.OrderDetails.Add(orderDetail);
-
-                // decrease stock
-                product.StockQuantity -= item.Quantity;
+                return BadRequest("Không tìm thấy thông tin khách hàng (UserID không hợp lệ). Vui lòng đăng nhập lại!");
             }
 
-            order.TotalAmount = totalAmount;
-            await _context.SaveChangesAsync();
-
-            return Ok(new
+            // Kiểm tra danh sách sản phẩm trống
+            if (dto.Items == null || !dto.Items.Any())
             {
-                message = "Order success",
-                orderId = order.OrderID
-            });
+                return BadRequest("Giỏ hàng của bạn đang trống.");
+            }
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                decimal totalAmount = 0;
+
+                var order = new Order
+                {
+                    UserID = dto.UserID,
+                    ReceiverName = dto.ReceiverName,
+                    ReceiverPhone = dto.ReceiverPhone,
+                    ReceiverAddress = dto.ReceiverAddress,
+                    Note = dto.Note,
+                    OrderStatus = 1, // 1: Chờ xử lý / Đã đặt
+                    OrderDate = DateTime.Now
+                };
+
+                _context.Orders.Add(order);
+                // Lưu trước để có OrderID cho bảng OrderDetails
+                await _context.SaveChangesAsync();
+
+                foreach (var item in dto.Items)
+                {
+                    // 🚀 BẮT LỖI 1: Số lượng đặt phải lớn hơn 0
+                    if (item.Quantity <= 0)
+                    {
+                        return BadRequest("Số lượng sản phẩm đặt hàng phải lớn hơn 0.");
+                    }
+
+                    var product = await _context.Products.FindAsync(item.ProductID);
+
+                    if (product == null)
+                    {
+                        return BadRequest($"Sản phẩm (ID: {item.ProductID}) không tồn tại trong hệ thống.");
+                    }
+
+                    // 🚀 BẮT LỖI 2: Số lượng đặt vượt quá số lượng tồn kho
+                    if (product.StockQuantity < item.Quantity)
+                    {
+                        // Trả về thông báo chuẩn hóa kèm số lượng tồn hiện tại
+                        return BadRequest($"{product.ProductName} chỉ còn {product.StockQuantity} sản phẩm trong kho.");
+                    }
+
+                    decimal price = product.PromoPrice ?? product.Price;
+                    totalAmount += price * item.Quantity;
+
+                    var orderDetail = new OrderDetail
+                    {
+                        OrderID = order.OrderID,
+                        ProductID = item.ProductID,
+                        Quantity = item.Quantity,
+                        Price = price
+                    };
+
+                    _context.OrderDetails.Add(orderDetail);
+
+                    // Trừ số lượng trong kho tương ứng với số lượng khách mua
+                    product.StockQuantity -= item.Quantity;
+                }
+
+                // Cập nhật lại tổng tiền chính xác sau khi quét qua toàn bộ item
+                order.TotalAmount = totalAmount;
+                await _context.SaveChangesAsync();
+
+                // Xác nhận toàn bộ giao dịch thành công dữ liệu hợp lệ
+                await transaction.CommitAsync();
+
+                return Ok(new
+                {
+                    message = "Order success",
+                    orderId = order.OrderID
+                });
+            }
+            catch (Exception ex)
+            {
+                // Hoàn tác dữ liệu kho và đơn hàng nếu sập lỗi giữa chừng
+                await transaction.RollbackAsync();
+                
+                // 🚀 BẮT LỖI TẬN GỐC: Lấy thông tin lỗi chi tiết nhất từ Database nhả về Frontend
+                var dbError = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                return StatusCode(500, $"Lỗi hệ thống Database: {dbError}");
+            }
         }
 
-        //========================================================
-        // CUSTOMER GET ORDER HISTORY (KHÁCH HÀNG XEM LỊCH SỬ MUA)
-        // ========================================================
+        // CUSTOMER GET ORDER HISTORY
         [Authorize]
         [HttpGet("customer-history")]
         public async Task<IActionResult> GetCustomerHistory()
         {
-            // Quét claim tìm User ID tương tự UserController
             var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                             ?? User.FindFirst("id")?.Value
                             ?? User.FindFirst("Id")?.Value
@@ -97,12 +132,11 @@ namespace backend.Controllers
 
             int userId = int.Parse(userIdClaim);
 
-            // Lấy toàn bộ đơn hàng của khách hàng này, kèm theo danh sách sản phẩm chi tiết
             var orders = await _context.Orders
                 .Include(x => x.OrderDetails)
                 .ThenInclude(x => x.Product)
                 .Where(x => x.UserID == userId)
-                .OrderByDescending(x => x.OrderID) // Đơn hàng mới nhất lên đầu
+                .OrderByDescending(x => x.OrderID)
                 .ToListAsync();
 
             return Ok(orders);
@@ -122,13 +156,11 @@ namespace backend.Controllers
                 .Include(x => x.User)
                 .AsQueryable();
 
-            // Lọc theo trạng thái
             if (status.HasValue)
             {
                 query = query.Where(x => x.OrderStatus == status.Value);
             }
 
-            // Lọc theo từ khóa (ID hoặc tên)
             if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(x => 
@@ -139,7 +171,6 @@ namespace backend.Controllers
 
             var totalItems = await query.CountAsync();
 
-            // SỬA TẠI ĐÂY: Sử dụng OrderBy để sắp xếp TĂNG DẦN theo ID
             var orders = await query
                 .OrderBy(x => x.OrderID) 
                 .Skip((page - 1) * pageSize)
@@ -154,6 +185,7 @@ namespace backend.Controllers
                 data = orders
             });
         }
+
         // ORDER DETAIL
         [Authorize]
         [HttpGet("{id}")]
@@ -193,28 +225,51 @@ namespace backend.Controllers
             return Ok(order);
         }
 
-        // CUSTOMER CANCEL ORDER
+        // CUSTOMER CANCEL ORDER (HỦY ĐƠN VÀ HOÀN LẠI SỐ LƯỢNG KHO)
         [Authorize]
         [HttpPut("{id}/cancel")]
         public async Task<IActionResult> CancelOrder(int id)
         {
-            var order = await _context.Orders.FindAsync(id);
+            var order = await _context.Orders
+                .Include(o => o.OrderDetails)
+                .FirstOrDefaultAsync(o => o.OrderID == id);
 
             if (order == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Order not found" });
             }
 
-            // only pending
             if (order.OrderStatus != 1)
             {
-                return BadRequest("Cannot cancel this order");
+                return BadRequest("Cannot cancel this order. Only pending orders can be canceled.");
             }
 
-            order.OrderStatus = 0;
-            await _context.SaveChangesAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                foreach (var detail in order.OrderDetails)
+                {
+                    var product = await _context.Products.FindAsync(detail.ProductID);
+                    if (product != null)
+                    {
+                        product.StockQuantity += detail.Quantity;
+                    }
+                }
 
-            return Ok(new { message = "Order canceled" });
+                order.OrderStatus = 0;
+                order.UpdatedAt = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new { message = "Order canceled and stock restored successfully." });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                var dbError = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                return StatusCode(500, $"Error while canceling order: {dbError}");
+            }
         }
     }
 }
