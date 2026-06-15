@@ -16,27 +16,38 @@ export default function Register() {
   });
 
   const [loading, setLoading] = useState(false);
+  // Thêm state để lưu thông báo lỗi riêng cho username nếu muốn hiển thị trên giao diện
+  const [usernameError, setUsernameError] = useState("");
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+
+    // Xóa thông báo lỗi khi người dùng bắt đầu nhập lại username
+    if (e.target.name === "username") {
+      setUsernameError("");
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Kiểm tra đầy đủ thông tin
     if (
       !formData.fullName ||
       !formData.username ||
       !formData.email ||
+      !formData.phone ||
+      !formData.address ||
       !formData.password
     ) {
       alert("Vui lòng nhập đầy đủ thông tin");
       return;
     }
 
+    // Kiểm tra khớp mật khẩu
     if (formData.password !== formData.confirmPassword) {
       alert("Mật khẩu không khớp");
       return;
@@ -52,6 +63,7 @@ export default function Register() {
       const cleanAddress = formData.address ? formData.address.trim() : "";
 
       setLoading(true);
+      setUsernameError("");
 
       await api.post("/auth/register", {
         fullName: formData.fullName.trim(),
@@ -104,6 +116,7 @@ export default function Register() {
               placeholder="Nguyễn Văn A"
               value={formData.fullName}
               onChange={handleChange}
+              required
             />
           </div>
 
@@ -112,11 +125,25 @@ export default function Register() {
             <input
               type="text"
               name="username"
-              className="auth-input"
+              className={`auth-input ${usernameError ? "input-error" : ""}`}
               placeholder="username"
               value={formData.username}
               onChange={handleChange}
+              required
             />
+            {/* Hiển thị dòng thông báo lỗi màu đỏ ngay dưới ô nhập Username */}
+            {usernameError && (
+              <span
+                style={{
+                  color: "red",
+                  fontSize: "13px",
+                  marginTop: "5px",
+                  display: "block",
+                }}
+              >
+                {usernameError}
+              </span>
+            )}
           </div>
 
           <div className="form-group">
@@ -185,7 +212,7 @@ export default function Register() {
         </form>
 
         <p className="auth-footer">
-          Đã có tài khoản?
+          Đã có tài khoản?{" "}
           <Link to="/login" className="auth-link">
             Đăng nhập
           </Link>
