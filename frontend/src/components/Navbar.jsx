@@ -13,6 +13,9 @@ import {
   FiLogOut,
   FiUserCheck,
   FiCreditCard,
+  FiShoppingBag,
+  FiLogIn,
+  FiUserPlus
 } from "react-icons/fi";
 
 import { getCategories } from "../services/categoryService";
@@ -137,8 +140,8 @@ export default function Navbar({
               {isUserMenuOpen && (
                 <div className="admin-dropdown-menu">
                   <div className="dropdown-padding">
-                    <button type="button" onClick={() => navigate("/login")} className="dropdown-action-btn"><FiUser /> <span>Đăng nhập</span></button>
-                    <button type="button" onClick={() => navigate("/register")} className="dropdown-action-btn"><FiLock /> <span>Đăng ký</span></button>
+                    <button type="button" onClick={() => navigate("/login")} className="dropdown-action-btn"><FiLogIn /> <span>Đăng nhập</span></button>
+                    <button type="button" onClick={() => navigate("/register")} className="dropdown-action-btn"><FiUserPlus /> <span>Đăng ký</span></button>
                   </div>
                 </div>
               )}
@@ -170,7 +173,7 @@ export default function Navbar({
                     
                     {/* KHU VỰC LỊCH SỬ ĐƠN HÀNG (ĐÃ SỬA LỖI ĐÓNG MỞ THẺ) */}
                     <button type="button" onClick={() => { navigate("/order-history"); setIsUserMenuOpen(false); }} className="dropdown-action-btn">
-                      <span>🛍️ Lịch sử đơn hàng</span>
+                      <FiShoppingBag /> <span>Lịch sử đơn hàng</span>
                     </button>
                     
                     <div className="dropdown-divider-line" />
