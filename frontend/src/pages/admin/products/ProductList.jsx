@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // <-- Thêm useLocation để nhận query từ URL
 import axios from "axios";
 import {
   Plus,
@@ -16,6 +16,7 @@ const CATEGORY_API_URL = "http://localhost:5016/api/categories";
 
 const ProductList = () => {
   const navigate = useNavigate();
+  const location = useLocation(); // <-- Lấy thông tin URL hiện tại
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -26,6 +27,14 @@ const ProductList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 10;
+
+  // 🌟 ĐỒNG BỘ TỪ KHÓA TỪ URL VÀO STATE CỦA TRANG
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const querySearch = searchParams.get("search") || "";
+    setSearch(querySearch);
+    setCurrentPage(1); // Reset về trang 1 khi từ khóa thay đổi
+  }, [location.search]); // Chạy lại khi query trên URL thay đổi
 
   useEffect(() => {
     loadCategories();
@@ -87,6 +96,17 @@ const ProductList = () => {
     } catch (error) {
       console.error(error);
       alert("Xóa thất bại");
+    }
+  };
+
+  // Hàm xử lý tìm kiếm trực tiếp tại trang sản phẩm (cập nhật lại URL cho đồng bộ với Header)
+  const handleLocalSearchSubmit = (e) => {
+    if (e.key === "Enter" || e.type === "click") {
+      if (search.trim()) {
+        navigate(`/admin/products?search=${encodeURIComponent(search.trim())}`);
+      } else {
+        navigate(`/admin/products`);
+      }
     }
   };
 
@@ -211,9 +231,11 @@ const ProductList = () => {
               top: "50%",
               transform: "translateY(-50%)",
               color: "#64748b",
+              cursor: "pointer",
             }}
             size={18}
             strokeWidth={2}
+            onClick={handleLocalSearchSubmit} // Cho phép click icon kính lúp để tìm kiếm luôn
           />
           <input
             type="text"
@@ -234,10 +256,8 @@ const ProductList = () => {
               fontFamily: "inherit",
             }}
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
+            onChange={(e) => setSearch(e.target.value)} // Thay đổi text tự nhiên
+            onKeyDown={handleLocalSearchSubmit} // Nhấn Enter để đồng bộ ra URL
           />
         </div>
 
@@ -565,33 +585,32 @@ const ProductList = () => {
                     ? `${Number(item.promoPrice).toLocaleString("vi-VN")} đ`
                     : "—"}
                 </td>
-                  <td style={{ padding: "16px", textAlign: "center" }}>
-                    {item.stockQuantity === 0 ? (
-                      <span
-                        style={{
-                          background: "#fee2e2", // Nền đỏ nhạt
-                          color: "#dc2626",      // Chữ đỏ đậm
-                          padding: "4px 8px",
-                          borderRadius: "6px",
-                          fontSize: "12px",
-                          fontWeight: "700",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        Hết hàng
-                      </span>
-                    ) : (
-                      <span
-                        style={{
-                          fontWeight: "600",
-                          // Giữ logic cũ: < 5 thì hiện màu cam cảnh báo
-                          color: item.stockQuantity > 5 ? "#0f172a" : "#d97706",
-                        }}
-                      >
-                        {item.stockQuantity}
-                      </span>
-                    )}
-                  </td>
+                <td style={{ padding: "16px", textAlign: "center" }}>
+                  {item.stockQuantity === 0 ? (
+                    <span
+                      style={{
+                        background: "#fee2e2",
+                        color: "#dc2626",
+                        padding: "4px 8px",
+                        borderRadius: "6px",
+                        fontSize: "12px",
+                        fontWeight: "700",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Hết hàng
+                    </span>
+                  ) : (
+                    <span
+                      style={{
+                        fontWeight: "600",
+                        color: item.stockQuantity > 5 ? "#0f172a" : "#d97706",
+                      }}
+                    >
+                      {item.stockQuantity}
+                    </span>
+                  )}
+                </td>
 
                 <td style={{ padding: "16px", textAlign: "right" }}>
                   <div

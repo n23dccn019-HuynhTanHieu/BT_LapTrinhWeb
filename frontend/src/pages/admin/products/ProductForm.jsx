@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import productService from "../../../services/productService";
-import { ArrowLeft, Save, ShoppingBag } from "lucide-react";
+import api from "../../../services/api"; // Import instance api để gọi upload file
+import { ArrowLeft, Save, ShoppingBag, Upload, ImageIcon } from "lucide-react";
 
 const ProductForm = () => {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ const ProductForm = () => {
   const isEditMode = !!id;
 
   const [categories, setCategories] = useState([]);
+  const [isUploading, setIsUploading] = useState(false); // Trạng thái đợi upload ảnh
   const [formData, setFormData] = useState({
     productName: "",
     categoryID: "",
@@ -56,6 +58,43 @@ const ProductForm = () => {
     }
   };
 
+  // ============================================================================
+  // 🛠️ HÀM XỬ LÝ UPLOAD ẢNH VẬT LÝ LÊN SERVER CỦA HIẾU
+  // ============================================================================
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const dataForm = new FormData();
+    dataForm.append("file", file); // Tên "file" trùng với IFormFile file bên C#
+
+    try {
+      setIsUploading(true);
+      // Gọi trực tiếp đến API Upload của Hiếu
+      const res = await api.post("/Upload", dataForm, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      // Nhận link ảnh tuyệt đối từ Backend trả về (Ví dụ: http://localhost:5016/Uploads/xxx.png)
+      const backendImageUrl = res.data.imageUrl;
+
+      // Cập nhật link này thẳng vào ô dữ liệu thumbnail của form
+      setFormData((prev) => ({
+        ...prev,
+        thumbnail: backendImageUrl,
+      }));
+
+      alert("Tải hình ảnh lên máy chủ thành công!");
+    } catch (err) {
+      console.error("Lỗi khi tải ảnh lên:", err);
+      alert("Tải ảnh thất bại! Hãy kiểm tra xem Hiếu đã cập nhật file Program.cs chưa.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
@@ -66,7 +105,7 @@ const ProductForm = () => {
         CategoryID: Number(formData.categoryID),
         Price: Number(formData.price),
         PromoPrice: formData.promoPrice ? Number(formData.promoPrice) : null,
-        Thumbnail: formData.thumbnail,
+        Thumbnail: formData.thumbnail, // Link ảnh vật lý đã được lưu ở đây
         Description: formData.description,
         StockQuantity: Number(formData.stockQuantity),
         IsActive: formData.isActive,
@@ -163,7 +202,7 @@ const ProductForm = () => {
             </div>
           </div>
 
-          {/* Hàng chứa Số lượng và Thumbnail */}
+          {/* Hàng chứa Số lượng */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             <div className="form-group" style={{ margin: 0 }}>
               <label style={{ display: 'block', fontWeight: '800', color: '#000000', marginBottom: '8px', fontSize: '14px' }}>Số lượng tồn kho *</label>
@@ -177,15 +216,64 @@ const ProductForm = () => {
               />
             </div>
 
+            {/* Ô chọn tải ảnh lên hệ thống */}
             <div className="form-group" style={{ margin: 0 }}>
-              <label style={{ display: 'block', fontWeight: '800', color: '#000000', marginBottom: '8px', fontSize: '14px' }}>Đường dẫn Thumbnail URL</label>
+              <label style={{ display: 'block', fontWeight: '800', color: '#000000', marginBottom: '8px', fontSize: '14px' }}>Tải ảnh sản phẩm lên máy chủ</label>
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                gap: '8px', 
+                width: '100%', 
+                boxSizing: 'border-box', 
+                border: '2px dashed #cbd5e1', 
+                padding: '11px 16px', 
+                borderRadius: '12px', 
+                fontWeight: '700', 
+                color: isUploading ? '#64748b' : '#2563eb', 
+                fontSize: '14px', 
+                background: '#f8fafc',
+                cursor: isUploading ? 'not-allowed' : 'pointer',
+                textAlign: 'center'
+              }}>
+                <Upload size={16} strokeWidth={2.5} />
+                {isUploading ? "Đang tải ảnh lên..." : "Bấm để chọn file ảnh"}
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleFileUpload} 
+                  disabled={isUploading} 
+                  style={{ display: 'none' }} 
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Phần quản lý link ảnh sản phẩm (Hiển thị preview nếu có link) */}
+          <div className="form-group" style={{ margin: 0 }}>
+            <label style={{ display: 'block', fontWeight: '800', color: '#000000', marginBottom: '8px', fontSize: '14px' }}>Đường dẫn Thumbnail URL (Tự động điền sau khi chọn file)</label>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
               <input
                 type="text"
-                placeholder="https://example.com/image.jpg"
-                style={{ width: '100%', boxSizing: 'border-box', border: '2px solid #cbd5e1', padding: '12px 16px', borderRadius: '12px', fontWeight: '700', color: '#000000', fontSize: '15px', outline: 'none', background: '#ffffff' }}
+                placeholder="https://example.com/image.jpg hoặc chọn file ở trên"
+                style={{ flex: 1, boxSizing: 'border-box', border: '2px solid #cbd5e1', padding: '12px 16px', borderRadius: '12px', fontWeight: '700', color: '#000000', fontSize: '15px', outline: 'none', background: '#f1f5f9' }}
                 value={formData.thumbnail}
                 onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
               />
+              
+              {/* Box hiển thị ảnh nhỏ (Preview) nếu ô nhập có link ảnh */}
+              {formData.thumbnail && (
+                <div style={{ width: '50px', height: '50px', border: '2px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img 
+                    src={formData.thumbnail} 
+                    alt="Product preview" 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'; // Ẩn ảnh nếu link lỗi
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
 

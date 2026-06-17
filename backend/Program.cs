@@ -5,7 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Models;
-
+using Microsoft.Extensions.FileProviders; // Thêm thư viện này để cấu hình file tĩnh
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -102,8 +102,27 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Static Files
-app.UseStaticFiles();
+// ============================================================================
+// 🛠️ ĐOẠN ĐÃ SỬA & BỔ SUNG: Cấu hình thư mục chứa ảnh "Uploads"
+// ============================================================================
+var uploadsFolder = Path.Combine(builder.Environment.ContentRootPath, "Uploads");
+
+// Tự động tạo thư mục "Uploads" nếu chưa tồn tại
+if (!Directory.Exists(uploadsFolder))
+{
+    Directory.CreateDirectory(uploadsFolder);
+}
+
+// Bật tính năng cho phép đọc file tĩnh từ thư mục Uploads
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadsFolder),
+    RequestPath = "/Uploads"
+});
+
+// Vẫn giữ lại cấu hình file tĩnh mặc định nếu cần dùng wwwroot
+app.UseStaticFiles(); 
+// ============================================================================
 
 // CORS
 app.UseCors("AllowAll");

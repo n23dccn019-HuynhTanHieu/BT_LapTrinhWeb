@@ -625,6 +625,9 @@ p {
   font-size: 14px;
   outline: none;
   transition: all 0.2s;
+
+  color: #1e293b !important;
+  caret-color: #2563eb !important
 }
 
 .admin-header-search:focus {
