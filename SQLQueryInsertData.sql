@@ -149,7 +149,7 @@ N'Quận 1, TP.HCM',
 -- Customer test
 (2,'testcustomer01',
 '$2a$11$x2kGvx3hUhvkbREInoUmwusPxzXU/ufyQLGpL6VtI1XMumuPM3hvC',
-N'Nguyễn Văn Khởi',
+N'Nguyễn Thành Công',
 'testcustomer01@gmail.com',
 '0912345678',
 N'Thủ Đức, TP.HCM',
@@ -193,28 +193,28 @@ OrderStatus, TotalAmount, Note, OrderDate, UpdatedAt)
 VALUES
 
 -- Tháng 4
-(2,N'Nguyễn Văn Khởi','0912345678',N'Thủ Đức, TP.HCM',5,29990000,N'Đã giao','2026-04-03',GETDATE()),
+(2,N'Nguyễn Thành Công','0912345678',N'Thủ Đức, TP.HCM',5,29990000,N'Đã giao','2026-04-03',GETDATE()),
 (3,N'Phạm Minh Đức','0923456789',N'Gò Vấp, TP.HCM',5,23990000,N'Đã giao','2026-04-07',GETDATE()),
 (4,N'Nguyễn Khánh Linh','0934567890',N'Bình Thạnh, TP.HCM',5,6500000,N'Đã giao','2026-04-11',GETDATE()),
 (5,N'Lê Quang Huy','0945678901',N'Tân Bình, TP.HCM',5,12500000,N'Đã giao','2026-04-15',GETDATE()),
 (6,N'Võ Thanh Hà','0956789012',N'Quận 7, TP.HCM',5,20990000,N'Đã giao','2026-04-22',GETDATE()),
 
 -- Tháng 5
-(2,N'Nguyễn Văn Khởi','0912345678',N'Thủ Đức, TP.HCM',5,22990000,N'Đã giao','2026-05-02',GETDATE()),
+(2,N'Nguyễn Thành Công','0912345678',N'Thủ Đức, TP.HCM',5,22990000,N'Đã giao','2026-05-02',GETDATE()),
 (3,N'Phạm Minh Đức','0923456789',N'Gò Vấp, TP.HCM',5,33990000,N'Đã giao','2026-05-06',GETDATE()),
 (4,N'Nguyễn Khánh Linh','0934567890',N'Bình Thạnh, TP.HCM',5,16990000,N'Đã giao','2026-05-10',GETDATE()),
 (5,N'Lê Quang Huy','0945678901',N'Tân Bình, TP.HCM',5,2600000,N'Đã giao','2026-05-14',GETDATE()),
 (6,N'Võ Thanh Hà','0956789012',N'Quận 7, TP.HCM',5,6800000,N'Đã giao','2026-05-20',GETDATE()),
 
 -- Đầu tháng 6
-(2,N'Nguyễn Văn Khởi','0912345678',N'Thủ Đức, TP.HCM',5,23990000,N'Đã giao','2026-06-01',GETDATE()),
+(2,N'Nguyễn Thành Công','0912345678',N'Thủ Đức, TP.HCM',5,23990000,N'Đã giao','2026-06-01',GETDATE()),
 (3,N'Phạm Minh Đức','0923456789',N'Gò Vấp, TP.HCM',5,24990000,N'Đã giao','2026-06-05',GETDATE()),
 (4,N'Nguyễn Khánh Linh','0934567890',N'Bình Thạnh, TP.HCM',5,2300000,N'Đã giao','2026-06-08',GETDATE()),
 (5,N'Lê Quang Huy','0945678901',N'Tân Bình, TP.HCM',5,2390000,N'Đã giao','2026-06-10',GETDATE()),
 (6,N'Võ Thanh Hà','0956789012',N'Quận 7, TP.HCM',5,6200000,N'Đã giao','2026-06-12',GETDATE()),
 
 -- Tuần hiện tại
-(2,N'Nguyễn Văn Khởi','0912345678',N'Thủ Đức, TP.HCM',0,29990000,N'', '2026-06-17',GETDATE()),
+(2,N'Nguyễn Thành Công','0912345678',N'Thủ Đức, TP.HCM',0,29990000,N'', '2026-06-17',GETDATE()),
 (3,N'Phạm Minh Đức','0923456789',N'Gò Vấp, TP.HCM',1,23990000,N'', '2026-06-18',GETDATE()),
 (4,N'Nguyễn Khánh Linh','0934567890',N'Bình Thạnh, TP.HCM',2,20990000,N'', '2026-06-19',GETDATE()),
 (5,N'Lê Quang Huy','0945678901',N'Tân Bình, TP.HCM',3,6500000,N'', '2026-06-20',GETDATE()),
