@@ -76,7 +76,7 @@ export default function Checkout() {
 
       if (response.status === 200 || response.data) {
         alert(
-          `🎉 Đặt hàng thành công!\nMã đơn hàng của Quý khách là: #${response.data.orderId || response.data}`
+          `Đặt hàng thành công!\nMã đơn hàng của Quý khách là: #${response.data.orderId || response.data}`
         );
         localStorage.removeItem("cartItems");
         window.dispatchEvent(new Event("cart_updated"));

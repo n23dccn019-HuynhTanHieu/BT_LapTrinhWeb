@@ -74,7 +74,7 @@ export default function Register() {
         password: formData.password,
       });
 
-      alert("Đăng ký thành công 🎉");
+      alert("Đăng ký thành công");
       navigate("/login");
     } catch (error) {
       console.error(error);

@@ -43,7 +43,7 @@ export default function Login() {
       // 2. Lưu thông tin user đầy đủ
       localStorage.setItem('currentUser', JSON.stringify(data.user));
 
-      alert('Đăng nhập thành công 🎉');
+      alert('Đăng nhập thành công');
 
       // 3. Kích hoạt Navbar và Giỏ hàng cập nhật dữ liệu
       window.dispatchEvent(new Event('cart_updated'));

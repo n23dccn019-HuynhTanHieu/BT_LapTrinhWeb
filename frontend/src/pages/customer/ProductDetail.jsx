@@ -88,7 +88,7 @@ export default function ProductDetail() {
 
     localStorage.setItem("cartItems", JSON.stringify(cartItems));
     window.dispatchEvent(new Event("cart_updated"));
-    alert(`🎉 Đã thêm thành công ${chosenQuantity} sản phẩm vào giỏ hàng!`);
+    alert(`Đã thêm thành công ${chosenQuantity} sản phẩm vào giỏ hàng!`);
   };
 
   if (loading) {
