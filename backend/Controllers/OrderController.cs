@@ -18,17 +18,28 @@ namespace backend.Controllers
             _context = context;
         }
 
-        // CUSTOMER CREATE ORDER (MUA HÀNG)
+        // CUSTOMER CREATE ORDER (MUA HÀNG + ĐẶT HÀNG NHANH)
         [HttpPost]
         public async Task<IActionResult> Create(CreateOrderDTO dto)
         {
-            // Kiểm tra tính hợp lệ của UserID trước khi thực hiện lưu DB
-            if (dto.UserID == null || dto.UserID <= 0)
+            // 1. Kiểm tra nếu có truyền UserID nhưng ID lại không hợp lệ
+            if (dto.UserID.HasValue && dto.UserID.Value <= 0)
             {
-                return BadRequest("Không tìm thấy thông tin khách hàng (UserID không hợp lệ). Vui lòng đăng nhập lại!");
+                return BadRequest("Thông tin tài khoản khách hàng không hợp lệ.");
             }
 
-            // Kiểm tra danh sách sản phẩm trống
+            // 2. Nếu LÀ KHÁCH VÃNG LAI (UserID == null), bắt buộc phải điền thông tin giao hàng
+            if (!dto.UserID.HasValue)
+            {
+                if (string.IsNullOrWhiteSpace(dto.ReceiverName) || 
+                    string.IsNullOrWhiteSpace(dto.ReceiverPhone) || 
+                    string.IsNullOrWhiteSpace(dto.ReceiverAddress))
+                {
+                    return BadRequest("Khách vãng lai vui lòng nhập đầy đủ: Tên, Số điện thoại và Địa chỉ để đặt hàng nhanh.");
+                }
+            }
+
+            // 3. Kiểm tra danh sách sản phẩm trống
             if (dto.Items == null || !dto.Items.Any())
             {
                 return BadRequest("Giỏ hàng của bạn đang trống.");
@@ -41,7 +52,7 @@ namespace backend.Controllers
 
                 var order = new Order
                 {
-                    UserID = dto.UserID,
+                    UserID = dto.UserID, // Nhận null nếu là khách vãng lai (Database đã hỗ trợ nhờ migration của bạn)
                     ReceiverName = dto.ReceiverName,
                     ReceiverPhone = dto.ReceiverPhone,
                     ReceiverAddress = dto.ReceiverAddress,
@@ -72,7 +83,6 @@ namespace backend.Controllers
                     // 🚀 BẮT LỖI 2: Số lượng đặt vượt quá số lượng tồn kho
                     if (product.StockQuantity < item.Quantity)
                     {
-                        // Trả về thông báo chuẩn hóa kèm số lượng tồn hiện tại
                         return BadRequest($"{product.ProductName} chỉ còn {product.StockQuantity} sản phẩm trong kho.");
                     }
 
@@ -111,7 +121,6 @@ namespace backend.Controllers
                 // Hoàn tác dữ liệu kho và đơn hàng nếu sập lỗi giữa chừng
                 await transaction.RollbackAsync();
                 
-                // 🚀 BẮT LỖI TẬN GỐC: Lấy thông tin lỗi chi tiết nhất từ Database nhả về Frontend
                 var dbError = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
                 return StatusCode(500, $"Lỗi hệ thống Database: {dbError}");
             }
@@ -153,7 +162,7 @@ namespace backend.Controllers
         )
         {
             var query = _context.Orders
-                .Include(x => x.User)
+                .Include(x => x.User) // EF Core tự động LEFT JOIN, không lo mất đơn hàng có UserID = null
                 .AsQueryable();
 
             if (status.HasValue)
