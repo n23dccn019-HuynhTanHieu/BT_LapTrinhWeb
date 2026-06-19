@@ -11,7 +11,7 @@ export default function ProductList({ searchTerm, selectedCategory }) {
   const [sortBy, setSortBy] = useState("name_asc"); 
   const [currentPage, setCurrentPage] = useState(1);
 
-  const ITEMS_PER_PAGE = 4; 
+  const ITEMS_PER_PAGE = 8; 
 
   useEffect(() => {
     fetchProducts();

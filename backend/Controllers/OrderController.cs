@@ -172,7 +172,7 @@ namespace backend.Controllers
             var totalItems = await query.CountAsync();
 
             var orders = await query
-                .OrderBy(x => x.OrderID) 
+                .OrderByDescending(x => x.OrderID)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
