@@ -5,7 +5,7 @@ import { FiClock, FiPackage, FiTruck, FiCheckCircle, FiXCircle } from 'react-ico
 export default function OrderHistory() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
 
   const fetchOrderHistory = async () => {
     try {
