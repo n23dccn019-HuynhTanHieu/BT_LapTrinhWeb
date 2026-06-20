@@ -28,7 +28,7 @@ export default function Cart() {
 
   const totalPrice = cart.reduce((sum, item) => sum + (item.price) * item.quantity, 0);
 
-  // 🚀 ĐÃ SỬA: Khối hiển thị khi Giỏ hàng trống - Chữ đen rõ ràng, nút bấm nổi bật
+  //ĐÃ SỬA: Khối hiển thị khi Giỏ hàng trống - Chữ đen rõ ràng, nút bấm nổi bật
   if (cart.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "100px 20px", fontFamily: "sans-serif" }}>

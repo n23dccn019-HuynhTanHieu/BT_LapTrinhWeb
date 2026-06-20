@@ -25,7 +25,7 @@ const ChangePasswordModal = ({ isOpen, onClose, adminData }) => {
       return;
     }
 
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     const userId = adminData?.userID || adminData?.id;
 
     if (!userId) {

@@ -27,7 +27,7 @@ const CustomerList = () => {
 
   const fetchCustomers = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       const res = await userService.getAll("", 1, 100, token);
       setCustomers(res.data.data || []);
     } catch (error) {
@@ -40,7 +40,8 @@ const CustomerList = () => {
     return (
       c.fullName?.toLowerCase().includes(search.toLowerCase()) ||
       c.phone?.includes(search) ||
-      c.userID.toString() === search.trim()
+      c.userID.toString() === search.trim() ||
+      c.email?.toLowerCase().includes(search.toLowerCase())
     );
   });
 

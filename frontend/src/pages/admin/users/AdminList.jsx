@@ -39,7 +39,7 @@ const AdminList = () => {
 
   const fetchAdmins = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       const response = await userService.getAdmins(token);
       const resData = response.data;
       setAdmins(resData.data || resData || []);
@@ -51,7 +51,7 @@ const AdminList = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa vĩnh viễn tài khoản này?")) return;
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       await userService.deleteAdmin(id, token);
       alert("Xóa tài khoản thành công!");
       fetchAdmins();

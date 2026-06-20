@@ -38,11 +38,9 @@ export default function Login() {
       const data = response.data;
 
       // 1. Lưu token xác thực
-      localStorage.setItem('token', data.token);
-
+      sessionStorage.setItem('token', data.token);
       // 2. Lưu thông tin user đầy đủ
-      localStorage.setItem('currentUser', JSON.stringify(data.user));
-
+      sessionStorage.setItem('currentUser', JSON.stringify(data.user));
       alert('Đăng nhập thành công');
 
       // 3. Kích hoạt Navbar và Giỏ hàng cập nhật dữ liệu

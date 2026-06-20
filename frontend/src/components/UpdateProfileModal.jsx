@@ -5,12 +5,12 @@ import { User, X } from "lucide-react"; // Đồng bộ icon giống AdminList
 export default function UpdateProfileModal({ isOpen, onClose, currentUser, token }) {
   const [profileData, setProfileData] = useState({ fullName: "", email: "", phone: "", address: "" });
 
-  // Tìm ra ID chuẩn bất kể backend/localstorage đặt tên là gì
+  // Tìm ra ID chuẩn bất kể backend/sessionStorage đặt tên là gì
   const currentUserId = currentUser?.id || currentUser?.userID || currentUser?.userId;
 
   useEffect(() => {
-    // Lấy token dự phòng từ localStorage nếu prop truyền vào bị chậm/rỗng
-    const activeToken = token || localStorage.getItem("token");
+    // Lấy token dự phòng từ sessionStorage nếu prop truyền vào bị chậm/rỗng
+    const activeToken = token || sessionStorage.getItem("token");
 
     if (isOpen && activeToken && currentUserId) { 
       userService.getProfile(currentUserId, activeToken)
@@ -40,8 +40,8 @@ export default function UpdateProfileModal({ isOpen, onClose, currentUser, token
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
 
-    // Lấy trực tiếp token chuẩn từ localStorage đề phòng prop truyền từ Navbar bị rỗng
-    const activeToken = token || localStorage.getItem("token"); 
+    // Lấy trực tiếp token chuẩn từ sessionStorage đề phòng prop truyền từ Navbar bị rỗng
+    const activeToken = token || sessionStorage.getItem("token"); 
 
     if (!activeToken || activeToken === "undefined") {
       alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!");
@@ -53,9 +53,9 @@ export default function UpdateProfileModal({ isOpen, onClose, currentUser, token
       const res = await userService.updateProfile(profileData, activeToken);
       alert(res.data?.message || "Cập nhật thông tin thành công!");
       
-      // Đồng bộ dữ liệu mới cập nhật vào LocalStorage để giao diện hiển thị tên mới lập tức
+      // Đồng bộ dữ liệu mới cập nhật vào sessionStorage để giao diện hiển thị tên mới lập tức
       const updatedUser = { ...currentUser, ...profileData };
-      localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+      sessionStorage.setItem("currentUser", JSON.stringify(updatedUser));
       
       onClose();
       window.location.reload(); 

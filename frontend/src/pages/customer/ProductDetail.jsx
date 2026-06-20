@@ -9,7 +9,7 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1); // Quản lý số lượng chọn mua
 
-  // 🌟 ĐÃ ĐỔI: Gọi trực tiếp API getById để lấy dữ liệu chính xác và nhanh nhất
+  //ĐÃ ĐỔI: Gọi trực tiếp API getById để lấy dữ liệu chính xác và nhanh nhất
   useEffect(() => {
     const fetchProductById = async () => {
       try {
@@ -33,20 +33,20 @@ export default function ProductDetail() {
   const handleAddToCart = () => {
     if (!product) return;
 
-    // 🌟 ĐÃ SỬA: Lấy đúng trường dữ liệu từ Backend gửi về (Thử cả chữ hoa lẫn chữ thường để an toàn)
+    //ĐÃ SỬA: Lấy đúng trường dữ liệu từ Backend gửi về (Thử cả chữ hoa lẫn chữ thường để an toàn)
     const stockAvailable = parseInt(product.stockQuantity ?? product.StockQuantity, 10) || 0; 
     const chosenQuantity = parseInt(quantity, 10) || 1;
 
     // 1. Kiểm tra nếu kho bằng 0
     if (stockAvailable <= 0) {
-      alert(`⚠️ Rất tiếc, sản phẩm "${product.productName}" hiện tại đã hết hàng!`);
+      alert(`Rất tiếc, sản phẩm "${product.productName}" hiện tại đã hết hàng!`);
       return;
     }
 
     // 2. Kiểm tra nếu số lượng đặt vượt quá kho
     if (chosenQuantity > stockAvailable) {
       alert(
-        `⚠️ Không đủ hàng tồn kho!\nSản phẩm này hiện tại chỉ còn lại ${stockAvailable} sản phẩm. Bạn không thể thêm ${chosenQuantity} sản phẩm vào giỏ.`
+        `Không đủ hàng tồn kho!\nSản phẩm này hiện tại chỉ còn lại ${stockAvailable} sản phẩm. Bạn không thể thêm ${chosenQuantity} sản phẩm vào giỏ.`
       );
       return;
     }
@@ -64,7 +64,7 @@ export default function ProductDetail() {
       // 3. Kiểm tra tổng số lượng sau khi cộng dồn với giỏ cũ xem có vượt kho không
       if (totalRequestedQuantity > stockAvailable) {
         alert(
-          `⚠️ Không thể thêm số lượng đã chọn!\nTrong giỏ hàng của bạn đã có sẵn ${existingItem.quantity} sản phẩm. Kho hàng hiện tại chỉ còn lại tối đa ${stockAvailable} máy.`
+          `Không thể thêm số lượng đã chọn!\nTrong giỏ hàng của bạn đã có sẵn ${existingItem.quantity} sản phẩm. Kho hàng hiện tại chỉ còn lại tối đa ${stockAvailable} máy.`
         );
         return;
       }

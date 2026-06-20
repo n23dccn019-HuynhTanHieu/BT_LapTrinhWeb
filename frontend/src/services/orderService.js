@@ -4,7 +4,7 @@ const orderService = {
   // 1. Xem lịch sử mua hàng của Customer (Tự động đính kèm token)
   getCustomerHistory: () => api.get("/order/customer-history"),
     
-  // 2. Tạo đơn hàng mới (Nếu có token trong localStorage thì tự gắn, không có vẫn chạy dạng khách vãng lai)
+  // 2. Tạo đơn hàng mới (Nếu có token trong sessionStorage thì tự gắn, không có vẫn chạy dạng khách vãng lai)
   create: (orderData) => api.post("/order", orderData),
 
   // 3. Admin lấy toàn bộ đơn hàng (Có phân trang và lọc trạng thái)

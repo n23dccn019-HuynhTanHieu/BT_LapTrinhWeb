@@ -67,7 +67,7 @@ namespace backend.Controllers
 
                 foreach (var item in dto.Items)
                 {
-                    // 🚀 BẮT LỖI 1: Số lượng đặt phải lớn hơn 0
+                    // BẮT LỖI 1: Số lượng đặt phải lớn hơn 0
                     if (item.Quantity <= 0)
                     {
                         return BadRequest("Số lượng sản phẩm đặt hàng phải lớn hơn 0.");
@@ -80,7 +80,7 @@ namespace backend.Controllers
                         return BadRequest($"Sản phẩm (ID: {item.ProductID}) không tồn tại trong hệ thống.");
                     }
 
-                    // 🚀 BẮT LỖI 2: Số lượng đặt vượt quá số lượng tồn kho
+                    // BẮT LỖI 2: Số lượng đặt vượt quá số lượng tồn kho
                     if (product.StockQuantity < item.Quantity)
                     {
                         return BadRequest($"{product.ProductName} chỉ còn {product.StockQuantity} sản phẩm trong kho.");

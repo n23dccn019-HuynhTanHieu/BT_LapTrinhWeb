@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // 🌟 Import useNavigate
+import { useNavigate } from "react-router-dom"; //Import useNavigate
 import orderService from "../../services/orderService";
 
 export default function Checkout() {
-  const navigate = useNavigate(); // 🌟 Khởi tạo hook useNavigate để điều hướng
+  const navigate = useNavigate(); //Khởi tạo hook useNavigate để điều hướng
   
   const [customerInfo, setCustomerInfo] = useState({
     userID: null,
@@ -18,7 +18,7 @@ export default function Checkout() {
     const cartData = JSON.parse(localStorage.getItem("cartItems")) || [];
     setCart(cartData);
 
-    const loggedInUser = JSON.parse(localStorage.getItem("currentUser"));
+    const loggedInUser = JSON.parse(sessionStorage.getItem("currentUser"));
 
     if (loggedInUser) {
       setCustomerInfo({
@@ -69,7 +69,7 @@ export default function Checkout() {
       })),
     };
 
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
 
     try {
       const response = await orderService.create(orderData, token);

@@ -28,7 +28,7 @@ const ProductList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 10;
 
-  // 🌟 ĐỒNG BỘ TỪ KHÓA TỪ URL VÀO STATE CỦA TRANG
+  //ĐỒNG BỘ TỪ KHÓA TỪ URL VÀO STATE CỦA TRANG
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const querySearch = searchParams.get("search") || "";
@@ -88,7 +88,7 @@ const ProductList = () => {
     if (!window.confirm("Bạn có chắc muốn xóa vĩnh viễn sản phẩm này?")) return;
 
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       await axios.delete(`${API_URL}/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });

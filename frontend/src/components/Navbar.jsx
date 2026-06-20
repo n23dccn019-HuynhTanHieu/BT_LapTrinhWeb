@@ -44,10 +44,10 @@ export default function Navbar({
   const [cartCount, setCartCount] = useState(2);
   const [categories, setCategories] = useState([]);
 
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
 
   const currentUser = useMemo(() => {
-    const rawUser = localStorage.getItem("currentUser") || localStorage.getItem("user");
+    const rawUser = sessionStorage.getItem("currentUser") || sessionStorage.getItem("user");
     if (!rawUser) return null;
     try { return JSON.parse(rawUser); } catch { return null; }
   }, []);
@@ -98,7 +98,7 @@ export default function Navbar({
   }, []);
 
   const handleLogout = () => {
-    localStorage.clear();
+    sessionStorage.clear();
     navigate("/login");
   };
 

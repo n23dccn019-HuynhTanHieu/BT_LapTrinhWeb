@@ -39,7 +39,7 @@ const OrderList = () => {
 
   const fetchOrders = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
 
       let statusCode = null;
       if (statusFilter !== "All") {
@@ -63,7 +63,7 @@ const OrderList = () => {
 
   const handleUpdateStatus = async (orderId, newStatus) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       await orderService.updateStatus(orderId, Number(newStatus), token);
       fetchOrders();
       alert("Cập nhật trạng thái đơn hàng thành công!");
@@ -75,7 +75,7 @@ const OrderList = () => {
 
   const handleViewDetail = async (id) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       const res = await orderService.getById(id, token);
       setSelectedOrder(res.data);
     } catch (error) {

@@ -44,7 +44,7 @@ const AdminFormModal = ({ isOpen, onClose, adminData, onSaveSuccess }) => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     try {
       if (adminData) {
         const userId = adminData.userID || adminData.id;

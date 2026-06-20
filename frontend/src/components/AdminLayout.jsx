@@ -42,7 +42,7 @@ export const AdminLayout = () => {
   const [searchKeyword, setSearchKeyword] = useState(initialSearch);
 
   const userMenuRef = useRef(null);
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
 
   // 1. CHỈ ĐỒNG BỘ TỪ URL KHI NGƯỜI DÙNG CHUYỂN TRANG/DI CHUYỂN PATH
   useEffect(() => {
@@ -80,7 +80,7 @@ export const AdminLayout = () => {
   }, [searchKeyword, navigate, location.pathname]);
 
   const currentUser = useMemo(() => {
-    const rawUser = localStorage.getItem("currentUser") || localStorage.getItem("user");
+    const rawUser = sessionStorage.getItem("currentUser") || sessionStorage.getItem("user");
     if (!rawUser) {
       return { fullName: "Admin King", username: "admin" };
     }
@@ -111,7 +111,7 @@ export const AdminLayout = () => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.clear();
+    sessionStorage.clear();
     setIsUserMenuOpen(false);
     navigate("/login");
   };

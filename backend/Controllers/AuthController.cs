@@ -68,7 +68,7 @@ namespace backend.Controllers
                 return Unauthorized("Tài khoản hoặc mật khẩu không chính xác.");
             }
 
-            // 🛑 GIA CỐ LOGIC: Kiểm tra trạng thái hoạt động (IsActive)
+            // GIA CỐ LOGIC: Kiểm tra trạng thái hoạt động (IsActive)
             // Nếu tài khoản bị khóa (false), chặn ngay lập tức không cho đi tiếp xuống phần check pass hay tạo JWT
             if (user.IsActive == false)
             {
