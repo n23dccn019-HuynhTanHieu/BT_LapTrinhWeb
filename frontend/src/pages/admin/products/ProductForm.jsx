@@ -31,7 +31,7 @@ const ProductForm = () => {
 
   const loadCategories = async () => {
     try {
-      const res = await fetch("http://localhost:5016/api/categories");
+      const res = await fetch("http://localhost:8080/api/categories");
       const data = await res.json();
       setCategories(data.data || data);
     } catch (err) {

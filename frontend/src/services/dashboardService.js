@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5016/api/dashboard";
+const API_URL = "http://localhost:8080/api/dashboard";
 
 const getAuthHeader = () => {
   const token = sessionStorage.getItem("token");

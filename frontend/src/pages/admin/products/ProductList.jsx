@@ -11,8 +11,8 @@ import {
   ShoppingBag,
 } from "lucide-react";
 
-const API_URL = "http://localhost:5016/api/product";
-const CATEGORY_API_URL = "http://localhost:5016/api/categories";
+const API_URL = "http://localhost:8080/api/product";
+const CATEGORY_API_URL = "http://localhost:8080/api/categories";
 
 const ProductList = () => {
   const navigate = useNavigate();

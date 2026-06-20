@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  # --- CẤU HÌNH CHO BACKEND ---
+  backend:
+    image: backend-api:latest
+    container_name: backend-container
+    ports:
+      - "8080:8080" # Mở cổng 8080 ra máy thật
+    restart: always
+
+  # --- CẤU HÌNH CHO FRONTEND ---
+  frontend:
+    build:
+      context: ./frontend # Đường dẫn tới thư mục chứa Frontend
+      dockerfile: Dockerfile
+    image: frontend-web:latest
+    container_name: frontend-container
+    ports:
+      - "3000:80" # Bản đồ cổng: Máy thật 3000 -> Container 80
+    restart: always
+    depends_on:
+      - backend # Chỉ bật Frontend sau khi Backend đã bật xong

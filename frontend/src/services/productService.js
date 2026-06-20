@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5016/api/product";
+const API_URL = "http://localhost:8080/api/product";
 // đổi port theo backend của bạn
 
 const productService = {

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_URL =
-  'http://localhost:5016/api/categories';
+  'http://localhost:8080/api/categories';
 
 const getAuthHeader = () => {
   const token =
